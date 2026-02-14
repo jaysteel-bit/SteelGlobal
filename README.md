@@ -17,7 +17,7 @@ The website is currently hosted and accessible at:
 
 - **Modern Design**: High-end aesthetics with custom animations and responsive layouts.
 - **Performance Optimized**: Built for speed and efficiency.
-- **Brand Consistency**: Reflecting the core values of the Steel Global brand.
+- **Brand Consistency**: Reflecting the core values of the Steel and Steel Global brand.
 
 ## Development
 
