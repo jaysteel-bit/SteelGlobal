@@ -32,6 +32,16 @@
             <!-- The Nebula / Fog Layer -->
             <div id="nebula"></div>
 
+            <!-- Shooting Stars Layer (Background 2D) -->
+            <svg id="shooting-stars" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="star-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color: rgba(255, 255, 255, 0); stop-opacity: 0" />
+                        <stop offset="100%" style="stop-color: #FFD700; stop-opacity: 1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+
             <!-- Center / Title -->
             <div class="explore-item" data-x="0" data-y="0" data-z="0">
                 <h1 class="main-title">STEEL<br>GLOBAL</h1>
@@ -269,6 +279,106 @@
             img.addEventListener('dragstart', e => e.preventDefault());
         });
 
+    </script>
+
+    <!-- Shooting Stars Engine -->
+    <script>
+        (function () {
+            const svg = document.getElementById('shooting-stars');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            const minSpeed = 10;
+            const maxSpeed = 30;
+            const minDelay = 1200;
+            const maxDelay = 4200;
+            const starWidth = 10;
+            const starHeight = 1; // Thin trail
+
+            function getRandomStartPoint() {
+                const side = Math.floor(Math.random() * 4);
+                const offset = Math.random() * window.innerWidth;
+                const hOffset = Math.random() * window.innerHeight;
+
+                switch (side) {
+                    case 0: // Top
+                        return { x: offset, y: 0, angle: 45 };
+                    case 1: // Right
+                        return { x: window.innerWidth, y: hOffset, angle: 135 };
+                    case 2: // Bottom
+                        return { x: offset, y: window.innerHeight, angle: 225 };
+                    case 3: // Left
+                        return { x: 0, y: hOffset, angle: 315 };
+                    default:
+                        return { x: 0, y: 0, angle: 45 };
+                }
+            }
+
+            function createStar() {
+                const { x, y, angle } = getRandomStartPoint();
+                const star = {
+                    x,
+                    y,
+                    angle,
+                    scale: 1,
+                    speed: Math.random() * (maxSpeed - minSpeed) + minSpeed,
+                    distance: 0,
+                    element: null
+                };
+
+                // Create SVG Rect
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("fill", "url(#star-gradient)");
+                rect.setAttribute("height", starHeight);
+                rect.setAttribute("width", starWidth); // Initial width
+                svg.appendChild(rect);
+                star.element = rect;
+
+                // Animation Frame
+                function move() {
+                    // Update physics
+                    star.x += star.speed * Math.cos((star.angle * Math.PI) / 180);
+                    star.y += star.speed * Math.sin((star.angle * Math.PI) / 180);
+                    star.distance += star.speed;
+                    star.scale = 1 + (star.distance / 100);
+
+                    // Check bounds (with buffer)
+                    if (
+                        star.x < -100 ||
+                        star.x > window.innerWidth + 100 ||
+                        star.y < -100 ||
+                        star.y > window.innerHeight + 100
+                    ) {
+                        try { svg.removeChild(rect); } catch (e) { }
+                        return; // Stop animation
+                    }
+
+                    // Update DOM
+                    // Transform: rotate around center
+                    // We calculate center based on current width (which is base * scale)
+                    const currentWidth = starWidth * star.scale;
+
+                    rect.setAttribute("x", star.x);
+                    rect.setAttribute("y", star.y);
+                    rect.setAttribute("width", currentWidth);
+
+                    // Rotation requires specific center
+                    const cx = star.x + (currentWidth / 2);
+                    const cy = star.y + (starHeight / 2);
+                    rect.setAttribute("transform", `rotate(${star.angle}, ${cx}, ${cy})`);
+
+                    requestAnimationFrame(move);
+                }
+
+                requestAnimationFrame(move);
+
+                // Schedule next star
+                setTimeout(createStar, Math.random() * (maxDelay - minDelay) + minDelay);
+            }
+
+            // Start the loop
+            createStar();
+        })();
     </script>
 </body>
 
