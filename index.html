@@ -20,7 +20,8 @@
     <!-- Top Left Logo Container -->
     <div class="logo-container">
         <!-- Logo requested: Steel Global Logo. -->
-        <img src="assets/logos/STEEL GLOBAL - Transparent.png" alt="Steel Global" class="brand-logo">
+        <img src="assets/logos/STEEL GLOBAL - Transparent.png" alt="Steel Global" class="brand-logo img-protected"
+            draggable="false">
     </div>
 
     <!-- Main 3D Viewport -->
@@ -51,10 +52,75 @@
                 <span class="topic-label">Culture</span>
             </div>
 
+            <!-- Populating 'The Infinite Sky' -->
+
+            <!-- Photography: Top Right, Deep (-1800) -->
+            <div class="explore-item topic" data-x="600" data-y="-400" data-z="-1800">
+                <span class="topic-label">Photography</span>
+            </div>
+
+            <!-- Motion Graphics: Bottom Right, Very Close (-100) - almost in face -->
+            <div class="explore-item topic" data-x="350" data-y="300" data-z="-100">
+                <span class="topic-label">Motion Graphics</span>
+            </div>
+
+            <!-- Videography: Mid Left, Medium (-800) -->
+            <div class="explore-item topic" data-x="-600" data-y="0" data-z="-800">
+                <span class="topic-label">Videography</span>
+            </div>
+
+            <!-- AI: Top Left, Very Deep (-3000) -->
+            <div class="explore-item topic" data-x="-800" data-y="-600" data-z="-3000">
+                <span class="topic-label">AI</span>
+            </div>
+
+            <!-- Futurism: Bottom Center, Deep (-2500) -->
+            <div class="explore-item topic" data-x="0" data-y="500" data-z="-2500">
+                <span class="topic-label">Futurism</span>
+            </div>
+
+            <!-- Modernism: Top Center, Mid (-1200) -->
+            <div class="explore-item topic" data-x="0" data-y="-500" data-z="-1200">
+                <span class="topic-label">Modernism</span>
+            </div>
+
+            <!-- Charity: Far Right, Deep (-2200) -->
+            <div class="explore-item topic" data-x="900" data-y="100" data-z="-2200">
+                <span class="topic-label">Charity</span>
+            </div>
+
+            <!-- Steel Cinema: Far Left, Deep (-1600) -->
+            <div class="explore-item topic" data-x="-700" data-y="200" data-z="-1600">
+                <span class="topic-label">Steel Cinema</span>
+            </div>
+
+            <!-- Sonic Arts: Bottom Left, Deep (-2800) -->
+            <div class="explore-item topic" data-x="-400" data-y="700" data-z="-2800">
+                <span class="topic-label">Sonic Arts</span>
+            </div>
+
+            <!-- Brutalism: Top Right, Mid-Deep (-1400) -->
+            <div class="explore-item topic" data-x="500" data-y="-200" data-z="-1400">
+                <span class="topic-label">Brutalism</span>
+            </div>
+
+            <!-- Strategy: Center Left, Close-ish (-400) -->
+            <div class="explore-item topic" data-x="-400" data-y="-100" data-z="-400">
+                <span class="topic-label">Strategy</span>
+            </div>
+
+            <!-- Ventures: Center Right, Deep (-2000) -->
+            <div class="explore-item topic" data-x="400" data-y="-50" data-z="-2000">
+                <span class="topic-label">Ventures</span>
+            </div>
+
             <!-- Extra "Stars" for depth context -->
             <div class="star" style="--x: 800px; --y: -500px; --z: -2000px;"></div>
             <div class="star" style="--x: -600px; --y: 600px; --z: -1000px;"></div>
             <div class="star" style="--x: 200px; --y: 300px; --z: -3000px;"></div>
+            <div class="star" style="--x: -900px; --y: -400px; --z: -1500px;"></div>
+            <div class="star" style="--x: 500px; --y: 700px; --z: -2500px;"></div>
+            <div class="star" style="--x: 0px; --y: -800px; --z: -3500px;"></div>
 
         </div>
     </div>
@@ -146,6 +212,12 @@
             currentZ = 0;
             universe.style.transform = `translate3d(0,0,0)`;
             document.body.classList.remove('at-destination');
+        });
+
+        // Image Protection
+        document.querySelectorAll('.img-protected').forEach(img => {
+            img.addEventListener('contextmenu', e => e.preventDefault());
+            img.addEventListener('dragstart', e => e.preventDefault());
         });
 
     </script>

@@ -163,6 +163,15 @@ body {
     transform: translate3d(var(--x), var(--y), var(--z));
 }
 
+/* --- Asset Protection --- */
+.img-protected {
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+}
+
 /* --- Ambient Background --- */
 .ambient-glow {
     position: absolute;
@@ -175,4 +184,27 @@ body {
     pointer-events: none;
     z-index: 1;
     filter: blur(50px);
+}
+
+/* --- Mobile Optimization --- */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: 12vw;
+        /* Larger rel to screen on mobile */
+    }
+
+    .tagline {
+        font-size: 1rem;
+        letter-spacing: 2px;
+    }
+
+    .topic-label {
+        font-size: 1.2rem;
+        /* Smaller topics so they don't overlap too much */
+    }
+
+    /* Adjust perspective slightly for mobile? */
+    #viewport {
+        perspective: 800px;
+    }
 }
