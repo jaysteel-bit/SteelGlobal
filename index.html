@@ -23,53 +23,131 @@
         <img src="assets/logos/STEEL GLOBAL - Transparent.png" alt="Steel Global" class="brand-logo">
     </div>
 
-    <!-- Main Content: "Just content. An explore feel." -->
-    <main class="explore-container">
-        <div class="content-wrapper">
-            <!-- Staggered/Scattered text elements for the "explore" vibe -->
-            <div class="explore-text layer-1" data-speed="2">
-                <h1>STEEL<br>GLOBAL</h1>
+    <!-- Main 3D Viewport -->
+    <div id="viewport">
+        <!-- The Universe: The container that moves around the camera -->
+        <div id="universe">
+
+            <!-- Center / Title -->
+            <div class="explore-item" data-x="0" data-y="0" data-z="0">
+                <h1 class="main-title">STEEL<br>GLOBAL</h1>
+                <p class="tagline">Curating the Unimagined</p>
             </div>
 
-            <div class="explore-text layer-2" data-speed="-1">
-                <p>Curating the<br>Unimagined</p>
+            <!-- Topics scattered in 3D space -->
+
+            <!-- Business: Mid Right, somewhat far (-500) -->
+            <div class="explore-item topic" data-x="400" data-y="-100" data-z="-500">
+                <span class="topic-label">Business</span>
             </div>
 
-            <div class="explore-text layer-3" data-speed="1.5">
-                <span>Architecture</span>
+            <!-- Design: Close, Bottom Left (-200) -->
+            <div class="explore-item topic" data-x="-300" data-y="200" data-z="-200">
+                <span class="topic-label">Design</span>
             </div>
 
-            <div class="explore-text layer-4" data-speed="-2">
-                <span>Design</span>
+            <!-- Culture: Far Back Left (-1500) -->
+            <div class="explore-item topic" data-x="-500" data-y="-300" data-z="-1500">
+                <span class="topic-label">Culture</span>
             </div>
 
-            <div class="explore-text layer-5" data-speed="3">
-                <span>Culture</span>
-            </div>
+            <!-- Extra "Stars" for depth context -->
+            <div class="star" style="--x: 800px; --y: -500px; --z: -2000px;"></div>
+            <div class="star" style="--x: -600px; --y: 600px; --z: -1000px;"></div>
+            <div class="star" style="--x: 200px; --y: 300px; --z: -3000px;"></div>
+
         </div>
-    </main>
+    </div>
 
     <!-- Ambient background element -->
     <div class="ambient-glow"></div>
 
     <script>
-        // Simple script to add a "drift" or "explore" feel based on mouse movement
-        document.addEventListener('mousemove', (e) => {
-            const x = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to 1
-            const y = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
+        // --- The Universe Engine ---
+        const universe = document.getElementById('universe');
+        const items = document.querySelectorAll('.explore-item');
 
-            const layers = document.querySelectorAll('.explore-text');
-            layers.forEach(layer => {
-                const speed = layer.getAttribute('data-speed');
-                const xOffset = x * 20 * speed;
-                const yOffset = y * 20 * speed;
-                layer.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
-            });
+        // State
+        let currentX = 0;
+        let currentY = 0;
+        let currentZ = 0;
 
-            // Also move the background slightly
-            const bg = document.querySelector('.ambient-glow');
-            bg.style.transform = `translate(${x * -10}px, ${y * -10}px)`;
+        // 1. Initial Setup: Position everything visually
+        items.forEach(item => {
+            const x = parseInt(item.dataset.x);
+            const y = parseInt(item.dataset.y);
+            const z = parseInt(item.dataset.z);
+
+            // Apply coordinates directly to the element
+            item.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
         });
+
+        // 2. Parallax / Mouse Look (Subtle drift)
+        document.addEventListener('mousemove', (e) => {
+            // Only apply subtle drift if not warping (optional, but cleaner)
+            const xPct = (e.clientX / window.innerWidth) - 0.5;
+            const yPct = (e.clientY / window.innerHeight) - 0.5;
+
+            // Rotate the entire universe slightly based on mouse
+            // We use rotateY and rotateX for that "looking around" feel
+            const rotX = -yPct * 5; // deg
+            const rotY = xPct * 5; // deg
+
+            // Note: We combine this with the current translation
+            universe.style.transform = `
+                translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
+                rotateX(${rotX}deg) 
+                rotateY(${rotY}deg)
+            `;
+        });
+
+        // 3. The Warp Drive (Navigation)
+        document.querySelectorAll('.topic').forEach(topic => {
+            topic.addEventListener('click', (e) => {
+                console.log('Clicked topic:', topic.innerText, topic.dataset); // DEBUG
+
+                // Get destination coordinates
+                // We want to move the UNIVERSE so that the target item ends up at (0,0,0) or slightly offset
+                // So Universe Translation = -1 * Item Position
+
+                const targetX = -parseInt(topic.dataset.x);
+                const targetY = -parseInt(topic.dataset.y);
+                const targetZ = -parseInt(topic.dataset.z);
+
+                console.log('Target coordinates:', { targetX, targetY, targetZ }); // DEBUG
+
+                // Update state
+                currentX = targetX;
+                currentY = targetY;
+                // Add a small offset to Z so we don't clip INSIDE the text, maybe stop 50px in front
+                currentZ = targetZ + 100;
+
+                // Apply the Warp
+                // The CSS transition handles the animation timing (cubic-bezier)
+                universe.style.transform = `
+                    translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
+                    rotateX(0deg) 
+                    rotateY(0deg)
+                `;
+
+                // Optional: Add a class to indicate "arrived" state for styling changes
+                document.body.classList.add('warping');
+                setTimeout(() => {
+                    document.body.classList.remove('warping');
+                    document.body.classList.add('at-destination');
+                }, 2000); // Match transition duration
+            });
+        });
+
+        // Reset view when clicking Main Title (Home)
+        document.querySelector('.main-title').addEventListener('click', () => {
+            currentX = 0;
+            currentY = 0;
+            currentZ = 0;
+            universe.style.transform = `translate3d(0,0,0)`;
+            document.body.classList.remove('at-destination');
+        });
+
     </script>
 </body>
 
