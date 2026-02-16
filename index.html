@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel Global - Explore</title>
+    <!-- Favicon as requested: Parent brand 'steel' -->
+    <link rel="icon" type="image/png" href="assets/logos/Steel Logo - Transparent.png">
+
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Fonts: Outfit for a modern, clean, tech/industrial feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Top Left Logo Container -->
+    <div class="logo-container">
+        <!-- Logo requested: Steel Global Logo. -->
+        <img src="assets/logos/STEEL GLOBAL - Transparent.png" alt="Steel Global" class="brand-logo">
+    </div>
+
+    <!-- Main Content: "Just content. An explore feel." -->
+    <main class="explore-container">
+        <div class="content-wrapper">
+            <!-- Staggered/Scattered text elements for the "explore" vibe -->
+            <div class="explore-text layer-1" data-speed="2">
+                <h1>STEEL<br>GLOBAL</h1>
+            </div>
+
+            <div class="explore-text layer-2" data-speed="-1">
+                <p>Curating the<br>Unimagined</p>
+            </div>
+
+            <div class="explore-text layer-3" data-speed="1.5">
+                <span>Architecture</span>
+            </div>
+
+            <div class="explore-text layer-4" data-speed="-2">
+                <span>Design</span>
+            </div>
+
+            <div class="explore-text layer-5" data-speed="3">
+                <span>Culture</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Ambient background element -->
+    <div class="ambient-glow"></div>
+
+    <script>
+        // Simple script to add a "drift" or "explore" feel based on mouse movement
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to 1
+            const y = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
+
+            const layers = document.querySelectorAll('.explore-text');
+            layers.forEach(layer => {
+                const speed = layer.getAttribute('data-speed');
+                const xOffset = x * 20 * speed;
+                const yOffset = y * 20 * speed;
+                layer.style.transform = `translate(${xOffset}px, ${yOffset}px)`;
+            });
+
+            // Also move the background slightly
+            const bg = document.querySelector('.ambient-glow');
+            bg.style.transform = `translate(${x * -10}px, ${y * -10}px)`;
+        });
+    </script>
+</body>
+
+</html>
