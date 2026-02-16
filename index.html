@@ -29,6 +29,9 @@
         <!-- The Universe: The container that moves around the camera -->
         <div id="universe">
 
+            <!-- The Nebula / Fog Layer -->
+            <div id="nebula"></div>
+
             <!-- Center / Title -->
             <div class="explore-item" data-x="0" data-y="0" data-z="0">
                 <h1 class="main-title">STEEL<br>GLOBAL</h1>
@@ -144,8 +147,37 @@
             const y = parseInt(item.dataset.y);
             const z = parseInt(item.dataset.z);
 
+            // Random Rotation for topics only, not the main title
+            let rotX = 0;
+            let rotY = 0;
+            let rotZ = 0;
+
+            if (item.classList.contains('topic')) {
+                // Random Rotation for "Floating in Space" feel
+                rotX = (Math.random() * 20) - 10; // -10 to 10 deg
+                rotY = (Math.random() * 20) - 10;
+                rotZ = (Math.random() * 10) - 5;  // Subtle Z tilt
+            }
+
+            // Depth Fading Logic
+            // If deeper than -2000, fade out. scale min opacity to 0.3
+            let opacity = 1;
+            if (z < -2000) {
+                // Map -2000 -> 1, -4000 -> 0.3
+                const depth = Math.abs(z);
+                opacity = 1 - ((depth - 2000) / 3000);
+                if (opacity < 0.3) opacity = 0.3;
+            }
+            item.style.opacity = opacity;
+
+
             // Apply coordinates directly to the element
-            item.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
+            item.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+
+            // Store original random rotation to re-apply it if needed (optional, simplistic for now)
+            item.dataset.rotX = rotX;
+            item.dataset.rotY = rotY;
+            item.dataset.rotZ = rotZ;
         });
 
         // 2. Parallax / Mouse Look (Subtle drift)
@@ -196,6 +228,17 @@
                     rotateY(0deg)
                 `;
 
+                // --- Visual Hierarchy: Dim Others ---
+                items.forEach(el => {
+                    if (el === topic) {
+                        el.classList.remove('dimmed');
+                        el.classList.add('active');
+                    } else {
+                        el.classList.add('dimmed');
+                        el.classList.remove('active');
+                    }
+                });
+
                 // Optional: Add a class to indicate "arrived" state for styling changes
                 document.body.classList.add('warping');
                 setTimeout(() => {
@@ -212,6 +255,12 @@
             currentZ = 0;
             universe.style.transform = `translate3d(0,0,0)`;
             document.body.classList.remove('at-destination');
+
+            // Restore Opacity
+            items.forEach(el => {
+                el.classList.remove('dimmed');
+                el.classList.remove('active');
+            });
         });
 
         // Image Protection
