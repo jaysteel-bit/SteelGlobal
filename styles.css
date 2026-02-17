@@ -409,6 +409,8 @@ body {
         right: 10%;
         opacity: 0.25;
         /* Toned down gold significantly */
+        animation-duration: 10s;
+        /* Faster on mobile */
     }
 
     /* Boost Greens on Mobile */
@@ -416,6 +418,13 @@ body {
     .blob-3 {
         opacity: 0.8;
         /* Make green more primary */
+        animation-duration: 7s;
+        /* Faster on mobile */
+    }
+
+    .blob-2 {
+        animation-duration: 9s;
+        /* Faster on mobile */
     }
 
     /* Tame the animation distance */
