@@ -407,6 +407,15 @@ body {
     .blob-4 {
         top: 10%;
         right: 10%;
+        opacity: 0.25;
+        /* Toned down gold significantly */
+    }
+
+    /* Boost Greens on Mobile */
+    .blob-1,
+    .blob-3 {
+        opacity: 0.8;
+        /* Make green more primary */
     }
 
     /* Tame the animation distance */
