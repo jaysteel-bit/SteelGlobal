@@ -369,10 +369,10 @@ body {
 
 @keyframes blob-float {
     0% {
-        transform: translate(0, 0) scale(1);
+        transform: translate(0, 0) scale(1) rotate(0deg);
     }
 
     100% {
-        transform: translate(30px, 50px) scale(1.1);
+        transform: translate(150px, 80px) scale(1.2) rotate(20deg);
     }
 }

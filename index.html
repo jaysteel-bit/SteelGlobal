@@ -26,7 +26,7 @@
 
     <!-- Main 3D Viewport -->
     <div id="viewport">
-        <!-- Background Layer (Phase 7: Destination State) -->
+        <!-- Background Layer (Destination State) -->
         <div id="background-layer">
             <!-- Business World: Animated Gradient -->
             <div id="world-business" class="world-layer">
@@ -274,7 +274,7 @@
                     document.body.classList.add('at-destination');
 
                     // Activate specific World
-                    if (topicName === 'Business') {
+                    if (topicName.toUpperCase() === 'BUSINESS') {
                         activateWorld('world-business');
                     } else {
                         // Default galaxy or clear? For now clear.
@@ -288,11 +288,11 @@
         // Helper: Activate a world
         function activateWorld(worldId) {
             clearWorlds(); // Clear existing
-            const worldIds = document.getElementById(worldId);
-            if (worldIds) {
+            const worldEl = document.getElementById(worldId);
+            if (worldEl) {
                 // Small delay to ensure smooth transition start
                 setTimeout(() => {
-                    worldIds.classList.add('active');
+                    worldEl.classList.add('active');
                     activeWorld = worldId;
                 }, 100);
             }
