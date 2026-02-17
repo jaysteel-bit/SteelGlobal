@@ -493,22 +493,20 @@
             svg.appendChild(rect);
 
             // Random flickering squares
-            const numSquares = 20;
+            const numSquares = 25; // Increase slightly for mobile coverage
+            // Dynamic rows/cols based on viewport
+            const maxCols = Math.ceil(window.innerWidth / width);
+            const maxRows = Math.ceil(window.innerHeight / height);
+
             for (let i = 0; i < numSquares; i++) {
                 const sq = document.createElementNS("http://www.w3.org/2000/svg", "rect");
                 sq.classList.add('grid-square');
                 sq.setAttribute("width", width - 1);
                 sq.setAttribute("height", height - 1);
 
-                // Random position setup (will be calculated relative to screen size approx)
-                // We use percentage approximations for simplicity in this generated SVG
-                // But for precise grid alignment, we need JS to calculate exact coords.
-                // Simplified approach: Randomly position them on load and let CSS animate opacity.
-                // Re-positioning on every animation loop is expensive, so we just scatter them once.
-
-                // We'll use a large enough area to cover most screens
-                const col = Math.floor(Math.random() * 50); // 0-49 columns
-                const row = Math.floor(Math.random() * 30); // 0-29 rows
+                // Use dynamic limits
+                const col = Math.floor(Math.random() * maxCols);
+                const row = Math.floor(Math.random() * maxRows);
 
                 sq.setAttribute("x", (col * width) + 1);
                 sq.setAttribute("y", (row * height) + 1);
