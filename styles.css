@@ -88,16 +88,34 @@ body {
     top: 50%;
     left: 50%;
     width: 400vw;
-    /* Massive to cover field of view even when shifting */
     height: 400vw;
     transform: translate(-50%, -50%) translateZ(-4000px);
-    /* Deep in background */
     background: radial-gradient(circle, rgba(40, 40, 50, 0.4) 0%, rgba(14, 14, 14, 0) 60%);
     pointer-events: none;
     z-index: -1;
-    opacity: 0.6;
+    opacity: 0.3;
+    /* Reduced from 0.6 to allow Background Layer to show through */
     animation: breathe 10s ease-in-out infinite alternate;
     will-change: opacity, transform;
+}
+
+/* ... existing Shooting Stars CSS ... */
+
+/* --- Business World (Animated Gradient) --- */
+#world-business {
+    background: transparent;
+    /* No fallback needed if body is black */
+}
+
+/* Blobs for the Business World */
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    /* Slightly sharper to be more visible */
+    opacity: 0.8;
+    /* Increased from 0.4 to punch through nebula */
+    animation: blob-float 10s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
 }
 
 #shooting-stars {
@@ -258,5 +276,103 @@ body {
     /* Adjust perspective slightly for mobile? */
     #viewport {
         perspective: 800px;
+    }
+}
+
+/* --- Phase 7: Destination State (Background Controller) --- */
+#background-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -5;
+    /* Behind everything */
+    pointer-events: auto;
+    /* Enable clicks for "Return to Nexus" */
+    overflow: hidden;
+}
+
+.world-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+    pointer-events: none;
+}
+
+.world-layer.active {
+    opacity: 1;
+}
+
+/* --- Business World (Animated Gradient) --- */
+#world-business {
+    background: transparent;
+    /* No fallback needed */
+}
+
+/* Blobs for the Business World */
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    /* Sharper blur for visibility */
+    opacity: 0.8;
+    /* High opacity to punch through nebula */
+    animation: blob-float 10s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+/* Specific Blob Colors for "Business" (Deep Blue, Steel, Gold hints) */
+.blob-1 {
+    background: #001f3f;
+    width: 60vw;
+    height: 60vw;
+    top: -10%;
+    left: -10%;
+    animation-duration: 15s;
+}
+
+.blob-2 {
+    background: #1a1a1a;
+    width: 50vw;
+    height: 50vw;
+    bottom: -10%;
+    right: -10%;
+    animation-duration: 18s;
+    animation-direction: alternate-reverse;
+}
+
+.blob-3 {
+    background: #3a506b;
+    width: 40vw;
+    height: 40vw;
+    top: 40%;
+    left: 40%;
+    animation-duration: 12s;
+    opacity: 0.3;
+}
+
+.blob-4 {
+    background: #D4AF37;
+    width: 30vw;
+    height: 30vw;
+    top: 20%;
+    right: 20%;
+    animation-duration: 20s;
+    opacity: 0.15;
+}
+
+/* Hint of Gold */
+
+@keyframes blob-float {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(30px, 50px) scale(1.1);
     }
 }
