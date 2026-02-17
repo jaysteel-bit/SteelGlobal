@@ -327,7 +327,7 @@ body {
 
 /* Specific Blob Colors for "Business" (Deep Blue, Steel, Gold hints) */
 .blob-1 {
-    background: #001f3f;
+    background: #0A2919;
     width: 60vw;
     height: 60vw;
     top: -10%;
@@ -346,7 +346,7 @@ body {
 }
 
 .blob-3 {
-    background: #3a506b;
+    background: #1B4D3E;
     width: 40vw;
     height: 40vw;
     top: 40%;
