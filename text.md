@@ -1123,4 +1123,6 @@ export default function Galaxy({
 
 ]
 
-*Give the IDE one implamentatiion at a time, so it doesn't get confused/overwhelmed*
+
+[^1]: **Update (2025-02-17):** Business World implemented using a "Rich Emerald" theme (Deep Emerald #0A2919, Forest Green #1B4D3E) instead of the original blue/grey concept. The effect uses large, animated blurred blobs (CSS-only) for an atmospheric "shifting" feel.
+[^2]: **Update (2025-02-17):** Added a subtle "Animated Grid" pattern to the Business World to reinforce the structure/data aesthetic. Implemented via vanilla JS/SVG to avoid React dependencies.

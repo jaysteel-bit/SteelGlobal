@@ -420,3 +420,44 @@ body {
         }
     }
 }
+
+/* --- Business World Grid --- */
+#business-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    /* Above blobs, below content */
+    opacity: 0.3;
+    /* Subtle */
+    pointer-events: none;
+    /* Mask to fade out edges */
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+}
+
+.grid-square {
+    fill: currentColor;
+    color: rgba(255, 255, 255, 0.15);
+    /* Faint white */
+    animation: flicker-grid 4s infinite alternate;
+}
+
+@keyframes flicker-grid {
+
+    0%,
+    10% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    90%,
+    100% {
+        opacity: 0;
+    }
+}

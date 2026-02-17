@@ -34,6 +34,8 @@
                 <div class="blob blob-2"></div>
                 <div class="blob blob-3"></div>
                 <div class="blob blob-4"></div>
+                <!-- Animated Grid Overlay -->
+                <div id="business-grid"></div>
             </div>
         </div>
 
@@ -449,6 +451,81 @@
             // Start the loop
             createStar();
         })();
+
+        // --- Business Grid Generator ---
+        // Generates a static SVG grid + random animated squares
+        function initBusinessGrid() {
+            const container = document.getElementById('business-grid');
+            if (!container) return;
+
+            const width = 40; // Spacing
+            const height = 40;
+
+            // Create SVG
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+            // Define Pattern
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+            pattern.setAttribute("id", "grid-pattern");
+            pattern.setAttribute("width", width);
+            pattern.setAttribute("height", height);
+            pattern.setAttribute("patternUnits", "userSpaceOnUse");
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", `M.5 ${height}V.5H${width}`);
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke", "rgba(255, 255, 255, 0.1)");
+            path.setAttribute("stroke-width", "1");
+
+            pattern.appendChild(path);
+            defs.appendChild(pattern);
+            svg.appendChild(defs);
+
+            // Base Grid Rect
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute("width", "100%");
+            rect.setAttribute("height", "100%");
+            rect.setAttribute("fill", "url(#grid-pattern)");
+            svg.appendChild(rect);
+
+            // Random flickering squares
+            const numSquares = 20;
+            for (let i = 0; i < numSquares; i++) {
+                const sq = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                sq.classList.add('grid-square');
+                sq.setAttribute("width", width - 1);
+                sq.setAttribute("height", height - 1);
+
+                // Random position setup (will be calculated relative to screen size approx)
+                // We use percentage approximations for simplicity in this generated SVG
+                // But for precise grid alignment, we need JS to calculate exact coords.
+                // Simplified approach: Randomly position them on load and let CSS animate opacity.
+                // Re-positioning on every animation loop is expensive, so we just scatter them once.
+
+                // We'll use a large enough area to cover most screens
+                const col = Math.floor(Math.random() * 50); // 0-49 columns
+                const row = Math.floor(Math.random() * 30); // 0-29 rows
+
+                sq.setAttribute("x", (col * width) + 1);
+                sq.setAttribute("y", (row * height) + 1);
+
+                // Randomize animation delay via style
+                sq.style.animationDelay = `${Math.random() * 5}s`;
+                sq.style.animationDuration = `${3 + Math.random() * 3}s`;
+
+                svg.appendChild(sq);
+            }
+
+            container.appendChild(svg);
+        }
+
+        // Initialize immediately
+        initBusinessGrid();
+
     </script>
 </body>
 
