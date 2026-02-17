@@ -376,3 +376,47 @@ body {
         transform: translate(150px, 80px) scale(1.2) rotate(20deg);
     }
 }
+
+/* --- Mobile Optimization for Business World --- */
+@media (max-width: 768px) {
+    .blob {
+        /* Filter blur is expensive on mobile, reduce it slightly or keep if performant
+           But we must make blobs bigger to cover gaps */
+        width: 100vw !important;
+        height: 100vw !important;
+        opacity: 0.6;
+        /* Slightly less opaque as they overlap more */
+    }
+
+    /* Override specific positions to center them more */
+    .blob-1 {
+        top: -20%;
+        left: -20%;
+    }
+
+    .blob-2 {
+        bottom: -20%;
+        right: -20%;
+    }
+
+    .blob-3 {
+        top: 30%;
+        left: 10%;
+    }
+
+    .blob-4 {
+        top: 10%;
+        right: 10%;
+    }
+
+    /* Tame the animation distance */
+    @keyframes blob-float {
+        0% {
+            transform: translate(0, 0) scale(1) rotate(0deg);
+        }
+
+        100% {
+            transform: translate(40px, 20px) scale(1.1) rotate(10deg);
+        }
+    }
+}
