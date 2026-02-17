@@ -493,7 +493,8 @@
             svg.appendChild(rect);
 
             // Random flickering squares
-            const numSquares = 25; // Increase slightly for mobile coverage
+            const isMobile = window.innerWidth <= 768;
+            const numSquares = isMobile ? 60 : 25; // Increase significantly for mobile coverage
             // Dynamic rows/cols based on viewport
             const maxCols = Math.ceil(window.innerWidth / width);
             const maxRows = Math.ceil(window.innerHeight / height);
