@@ -11,18 +11,18 @@ Steel Global is dedicated to providing premium solutions in the steel industry. 
 
 ## Deployment
 
-GitHub Repository: [https://github.com/jaysteel-bit/SteelGlobal](https://github.com/jaysteel-bit/SteelGlobal)
+GitHub Repository [Master Branch]: [https://github.com/jaysteel-bit/SteelGlobal](https://github.com/jaysteel-bit/SteelGlobal)
 
-Cloudflare Pages: [Not set up yet]
-
-The website domain is currently hosted on Cloudflare and accessible at (not yet connected to the repository/pages-build): [https://steelglobal.us](https://steelglobal.us)
+Cloudflare Pages [Automatic deployments enabled post commit and build]: [https://steelglobal.us](https://steelglobal.us)
 
 ## Features (To be updated)
 
 - **Modern Design**: High-end aesthetics with custom animations and responsive layouts.
 - **Performance Optimized**: Built for speed and efficiency.
 - **Brand Consistency**: Reflecting the core values of the Steel and Steel Global brand.
-
+- **SEO Optimized**: Built for search engine optimization.
+- **Mobile Optimized**: Built for mobile devices. Which may need some adjustments/improvements/different approaches.
+- **Desktop Optimized**: Built for desktop devices.
 ---
 
 © 2026 Steel Global. All rights reserved.

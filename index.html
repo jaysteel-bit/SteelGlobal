@@ -5,10 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steel Global - Explore</title>
-    <!-- Favicon as requested: Parent brand 'steel' -->
+    <!-- Favicon brand - Steel -->
     <link rel="icon" type="image/png" href="assets/logos/Steel Logo - Transparent.png">
 
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Three.js for 3D backgrounds (AI World) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <!-- Fonts: Outfit for a modern, clean, tech/industrial feel -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +40,9 @@
                 <!-- Animated Grid Overlay -->
                 <div id="business-grid"></div>
             </div>
+            
+            <!-- AI World: Light Pillars -->
+            <div id="world-ai" class="world-layer" style="mix-blend-mode: luminosity;"></div>
         </div>
 
         <!-- The Universe: The container that moves around the camera -->
@@ -86,9 +92,9 @@
                 <span class="topic-label">Photography</span>
             </div>
 
-            <!-- Motion Graphics: Bottom Right, Very Close (-100) - almost in face -->
+            <!-- Philosophy: Bottom Right, Very Close (-100) - almost in face -->
             <div class="explore-item topic" data-x="350" data-y="300" data-z="-100">
-                <span class="topic-label">Motion Graphics</span>
+                <span class="topic-label">Philosophy</span>
             </div>
 
             <!-- Videography: Mid Left, Medium (-800) -->
@@ -278,6 +284,11 @@
                     // Activate specific World
                     if (topicName.toUpperCase() === 'BUSINESS') {
                         activateWorld('world-business');
+                    } else if (topicName.toUpperCase() === 'AI') {
+                        activateWorld('world-ai');
+                        if (typeof initAIWorld === 'function') {
+                            setTimeout(initAIWorld, 500); // Lazy init 0.5s after landing
+                        }
                     } else {
                         // Default galaxy or clear? For now clear.
                         clearWorlds();
@@ -306,6 +317,9 @@
                 layer.classList.remove('active');
             });
             activeWorld = null;
+            if (typeof disposeAIWorld === 'function') {
+                disposeAIWorld();
+            }
         }
 
         // Reset view helper
@@ -351,6 +365,245 @@
             img.addEventListener('dragstart', e => e.preventDefault());
         });
 
+    </script>
+
+    <!-- AI World (LightPillars) Engine -->
+    <script>
+        let aiRenderer = null;
+        let aiScene = null;
+        let aiCamera = null;
+        let aiMaterial = null;
+        let aiGeometry = null;
+        let aiRafId = null;
+
+        function initAIWorld() {
+            const container = document.getElementById('world-ai');
+            if (!container) return;
+            
+            // If already initialized, do nothing
+            if (aiRenderer) return;
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            aiScene = new THREE.Scene();
+            aiCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+            try {
+                aiRenderer = new THREE.WebGLRenderer({
+                    antialias: false,
+                    alpha: true,
+                    powerPreference: 'high-performance',
+                    precision: 'highp',
+                    stencil: false,
+                    depth: false
+                });
+            } catch (error) {
+                console.error("WebGL not supported for AI World");
+                return;
+            }
+
+            aiRenderer.setSize(width, height);
+            aiRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(aiRenderer.domElement);
+
+            const vertexShader = \`
+              varying vec2 vUv;
+              void main() {
+                vUv = uv;
+                gl_Position = vec4(position, 1.0);
+              }
+            \`;
+
+            // Define custom tanh replacement for compatibility with standard GLSL ES 1.0
+            const fragmentShader = \`
+              precision highp float;
+
+              uniform float uTime;
+              uniform vec2 uResolution;
+              uniform vec2 uMouse;
+              uniform vec3 uTopColor;
+              uniform vec3 uBottomColor;
+              uniform float uIntensity;
+              uniform bool uInteractive;
+              uniform float uGlowAmount;
+              uniform float uPillarWidth;
+              uniform float uPillarHeight;
+              uniform float uNoiseIntensity;
+              uniform float uRotCos;
+              uniform float uRotSin;
+              uniform float uPillarRotCos;
+              uniform float uPillarRotSin;
+              uniform float uWaveSin;
+              uniform float uWaveCos;
+              varying vec2 vUv;
+
+              const float STEP_MULT = 1.0;
+              const int MAX_ITER = 60;
+              const int WAVE_ITER = 3;
+
+              vec3 my_tanh(vec3 x) {
+                  vec3 e = exp(2.0 * x);
+                  return (e - 1.0) / (e + 1.0);
+              }
+
+              void main() {
+                vec2 uv = (vUv * 2.0 - 1.0) * vec2(uResolution.x / uResolution.y, 1.0);
+                uv = vec2(uPillarRotCos * uv.x - uPillarRotSin * uv.y, uPillarRotSin * uv.x + uPillarRotCos * uv.y);
+
+                vec3 ro = vec3(0.0, 0.0, -10.0);
+                vec3 rd = normalize(vec3(uv, 1.0));
+
+                float rotC = uRotCos;
+                float rotS = uRotSin;
+                if(uInteractive && (uMouse.x != 0.0 || uMouse.y != 0.0)) {
+                  float a = uMouse.x * 6.283185;
+                  rotC = cos(a);
+                  rotS = sin(a);
+                }
+
+                vec3 col = vec3(0.0);
+                float t = 0.1;
+                
+                for(int i = 0; i < MAX_ITER; i++) {
+                  vec3 p = ro + rd * t;
+                  p.xz = vec2(rotC * p.x - rotS * p.z, rotS * p.x + rotC * p.z);
+
+                  vec3 q = p;
+                  q.y = p.y * uPillarHeight + uTime;
+                  
+                  float freq = 1.0;
+                  float amp = 1.0;
+                  for(int j = 0; j < WAVE_ITER; j++) {
+                    q.xz = vec2(uWaveCos * q.x - uWaveSin * q.z, uWaveSin * q.x + uWaveCos * q.z);
+                    q += cos(q.zxy * freq - uTime * float(j) * 2.0) * amp;
+                    freq *= 2.0;
+                    amp *= 0.5;
+                  }
+                  
+                  float d = length(cos(q.xz)) - 0.2;
+                  float bound = length(p.xz) - uPillarWidth;
+                  float k = 4.0;
+                  float h = max(k - abs(d - bound), 0.0);
+                  d = max(d, bound) + h * h * 0.0625 / k;
+                  d = abs(d) * 0.15 + 0.01;
+
+                  float grad = clamp((15.0 - p.y) / 30.0, 0.0, 1.0);
+                  col += mix(uBottomColor, uTopColor, grad) / d;
+
+                  t += d * STEP_MULT;
+                  if(t > 50.0) break;
+                }
+
+                float widthNorm = uPillarWidth / 3.0;
+                col = my_tanh(col * uGlowAmount / widthNorm);
+                
+                col -= fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) / 15.0 * uNoiseIntensity;
+                
+                gl_FragColor = vec4(col * uIntensity, 1.0);
+              }
+            \`;
+
+            // Settings from prompt
+            const topColor = new THREE.Vector3(1, 1, 1); // #ffffff
+            const bottomColor = new THREE.Vector3(0, 0, 0); // #000000
+            const pillarRotation = 116;
+            const pillarRotRad = (pillarRotation * Math.PI) / 180;
+            const waveSin = Math.sin(0.4);
+            const waveCos = Math.cos(0.4);
+
+            aiMaterial = new THREE.ShaderMaterial({
+              vertexShader,
+              fragmentShader,
+              uniforms: {
+                uTime: { value: 0 },
+                uResolution: { value: new THREE.Vector2(width, height) },
+                uMouse: { value: new THREE.Vector2(0,0) },
+                uTopColor: { value: topColor },
+                uBottomColor: { value: bottomColor },
+                uIntensity: { value: 1.0 },
+                uInteractive: { value: false },
+                uGlowAmount: { value: 0.002 },
+                uPillarWidth: { value: 3.0 },
+                uPillarHeight: { value: 0.4 },
+                uNoiseIntensity: { value: 0.6 },
+                uRotCos: { value: 1.0 },
+                uRotSin: { value: 0.0 },
+                uPillarRotCos: { value: Math.cos(pillarRotRad) },
+                uPillarRotSin: { value: Math.sin(pillarRotRad) },
+                uWaveSin: { value: waveSin },
+                uWaveCos: { value: waveCos }
+              },
+              transparent: true,
+              depthWrite: false,
+              depthTest: false
+            });
+
+            aiGeometry = new THREE.PlaneGeometry(2, 2);
+            const mesh = new THREE.Mesh(aiGeometry, aiMaterial);
+            aiScene.add(mesh);
+
+            let lastTime = performance.now();
+            let aiTime = 0;
+            const frameTime = 1000 / 60;
+
+            const animate = currentTime => {
+              if (!aiMaterial || !aiRenderer) return;
+
+              const deltaTime = currentTime - lastTime;
+              if (deltaTime >= frameTime) {
+                aiTime += 0.016 * 0.3; // rotationSpeed = 0.3
+                aiMaterial.uniforms.uTime.value = aiTime;
+                aiMaterial.uniforms.uRotCos.value = Math.cos(aiTime * 0.3);
+                aiMaterial.uniforms.uRotSin.value = Math.sin(aiTime * 0.3);
+                aiRenderer.render(aiScene, aiCamera);
+                lastTime = currentTime - (deltaTime % frameTime);
+              }
+              aiRafId = requestAnimationFrame(animate);
+            };
+            aiRafId = requestAnimationFrame(animate);
+
+            // Handle resize
+            window.addEventListener('resize', onAIResize, { passive: true });
+        }
+
+        function onAIResize() {
+            if (!aiRenderer || !aiMaterial) return;
+            const container = document.getElementById('world-ai');
+            if(!container) return;
+            const newWidth = container.clientWidth;
+            const newHeight = container.clientHeight;
+            aiRenderer.setSize(newWidth, newHeight);
+            aiMaterial.uniforms.uResolution.value.set(newWidth, newHeight);
+        }
+
+        function disposeAIWorld() {
+            if (aiRafId) {
+                cancelAnimationFrame(aiRafId);
+                aiRafId = null;
+            }
+            window.removeEventListener('resize', onAIResize);
+            
+            if (aiRenderer) {
+                aiRenderer.dispose();
+                aiRenderer.forceContextLoss();
+                const container = document.getElementById('world-ai');
+                if (container && container.contains(aiRenderer.domElement)) {
+                    container.removeChild(aiRenderer.domElement);
+                }
+                aiRenderer = null;
+            }
+            if (aiMaterial) {
+                aiMaterial.dispose();
+                aiMaterial = null;
+            }
+            if (aiGeometry) {
+                aiGeometry.dispose();
+                aiGeometry = null;
+            }
+            aiScene = null;
+            aiCamera = null;
+        }
     </script>
 
     <!-- Shooting Stars Engine -->
