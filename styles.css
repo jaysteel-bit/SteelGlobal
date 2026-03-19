@@ -125,8 +125,7 @@ body {
 .blob {
     position: absolute;
     border-radius: 50%;
-    filter: blur(60px);
-    /* Slightly sharper to be more visible */
+    /* Filter blur removed for GPU optimization */
     opacity: 0.8;
     /* Increased from 0.4 to punch through nebula */
     animation: blob-float 10s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
@@ -255,11 +254,10 @@ body {
     left: 50%;
     width: 60vw;
     height: 60vw;
-    background: radial-gradient(circle, rgba(50, 50, 50, 0.3) 0%, rgba(14, 14, 14, 0) 70%);
+    background: radial-gradient(circle, rgba(50, 50, 50, 0.3) 0%, rgba(40, 40, 40, 0.2) 30%, rgba(20, 20, 20, 0.05) 60%, rgba(14, 14, 14, 0) 80%);
     transform: translate(-50%, -50%);
     pointer-events: none;
     z-index: 1;
-    filter: blur(50px);
 }
 
 /* --- Mobile Optimization --- */
@@ -357,9 +355,9 @@ body {
     animation: blob-float 10s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
 }
 
-/* Specific Blob Colors for "Business" (Deep Blue, Steel, Gold hints) */
+/* Specific Blob Colors for "Business" (Mapped to pure radial gradients for performance) */
 .blob-1 {
-    background: #0A2919;
+    background: radial-gradient(closest-side, rgba(10, 41, 25, 1) 0%, rgba(10, 41, 25, 0.8) 30%, rgba(10, 41, 25, 0) 100%);
     width: 60vw;
     height: 60vw;
     top: -10%;
@@ -368,7 +366,7 @@ body {
 }
 
 .blob-2 {
-    background: #1a1a1a;
+    background: radial-gradient(closest-side, rgba(26, 26, 26, 1) 0%, rgba(26, 26, 26, 0.8) 30%, rgba(26, 26, 26, 0) 100%);
     width: 50vw;
     height: 50vw;
     bottom: -10%;
@@ -378,7 +376,7 @@ body {
 }
 
 .blob-3 {
-    background: #1B4D3E;
+    background: radial-gradient(closest-side, rgba(27, 77, 62, 1) 0%, rgba(27, 77, 62, 0.8) 30%, rgba(27, 77, 62, 0) 100%);
     width: 40vw;
     height: 40vw;
     top: 40%;
@@ -388,7 +386,7 @@ body {
 }
 
 .blob-4 {
-    background: #D4AF37;
+    background: radial-gradient(closest-side, rgba(212, 175, 55, 1) 0%, rgba(212, 175, 55, 0.8) 30%, rgba(212, 175, 55, 0) 100%);
     width: 30vw;
     height: 30vw;
     top: 20%;

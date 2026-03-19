@@ -74,16 +74,9 @@
                 <!-- The Nebula / Fog Layer -->
                 <div id="nebula"></div>
 
-            <!-- Shooting Stars Layer (Background 2D) -->
+            <!-- Shooting Stars Layer (Background 2D, ported to Canvas for extreme performance) -->
             <!-- NEXUS COMPONENT: Permanent background feature -->
-            <svg id="shooting-stars" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="star-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color: rgba(255, 255, 255, 0); stop-opacity: 0" />
-                        <stop offset="100%" style="stop-color: #FFD700; stop-opacity: 1" />
-                    </linearGradient>
-                </defs>
-            </svg>
+            <canvas id="shooting-stars" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
 
             <!-- Center / Title -->
             <div class="explore-item" data-x="0" data-y="0" data-z="0">
@@ -1477,9 +1470,21 @@
     <!-- Shooting Stars Engine -->
     <script>
         (function () {
-            const svg = document.getElementById('shooting-stars');
-            const width = window.innerWidth;
-            const height = window.innerHeight;
+            const canvas = document.getElementById('shooting-stars');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d', { alpha: true });
+            
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+
+            function resize() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resize);
+            resize();
 
             const minSpeed = 10;
             const maxSpeed = 30;
@@ -1488,88 +1493,91 @@
             const starWidth = 10;
             const starHeight = 1; // Thin trail
 
+            const activeStars = [];
+
             function getRandomStartPoint() {
                 const side = Math.floor(Math.random() * 4);
                 const offset = Math.random() * window.innerWidth;
                 const hOffset = Math.random() * window.innerHeight;
 
                 switch (side) {
-                    case 0: // Top
-                        return { x: offset, y: 0, angle: 45 };
-                    case 1: // Right
-                        return { x: window.innerWidth, y: hOffset, angle: 135 };
-                    case 2: // Bottom
-                        return { x: offset, y: window.innerHeight, angle: 225 };
-                    case 3: // Left
-                        return { x: 0, y: hOffset, angle: 315 };
-                    default:
-                        return { x: 0, y: 0, angle: 45 };
+                    case 0: return { x: offset, y: 0, angle: 45 };          // Top
+                    case 1: return { x: window.innerWidth, y: hOffset, angle: 135 }; // Right
+                    case 2: return { x: offset, y: window.innerHeight, angle: 225 }; // Bottom
+                    case 3: return { x: 0, y: hOffset, angle: 315 };        // Left
+                    default: return { x: 0, y: 0, angle: 45 };
                 }
             }
 
-            function createStar() {
-                const { x, y, angle } = getRandomStartPoint();
-                const star = {
-                    x,
-                    y,
-                    angle,
-                    scale: 1,
-                    speed: Math.random() * (maxSpeed - minSpeed) + minSpeed,
-                    distance: 0,
-                    element: null
-                };
+            // A single Render Loop processes all stars efficiently
+            function renderLoop() {
+                // Clear entire canvas completely transparently
+                ctx.clearRect(0, 0, width, height);
 
-                // Create SVG Rect
-                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                rect.setAttribute("fill", "url(#star-gradient)");
-                rect.setAttribute("height", starHeight);
-                rect.setAttribute("width", starWidth); // Initial width
-                svg.appendChild(rect);
-                star.element = rect;
+                // Iterate backwards to allow safe removal of array elements upon array death
+                for (let i = activeStars.length - 1; i >= 0; i--) {
+                    const star = activeStars[i];
 
-                // Animation Frame
-                function move() {
-                    // Update physics
+                    // Update physics mathematically exactly the same
                     star.x += star.speed * Math.cos((star.angle * Math.PI) / 180);
                     star.y += star.speed * Math.sin((star.angle * Math.PI) / 180);
                     star.distance += star.speed;
                     star.scale = 1 + (star.distance / 100);
 
-                    // Check bounds (with buffer)
-                    if (
-                        star.x < -100 ||
-                        star.x > window.innerWidth + 100 ||
-                        star.y < -100 ||
-                        star.y > window.innerHeight + 100
-                    ) {
-                        try { svg.removeChild(rect); } catch (e) { }
-                        return; // Stop animation
-                    }
-
-                    // Update DOM
-                    // Transform: rotate around center
-                    // We calculate center based on current width (which is base * scale)
                     const currentWidth = starWidth * star.scale;
 
-                    rect.setAttribute("x", star.x);
-                    rect.setAttribute("y", star.y);
-                    rect.setAttribute("width", currentWidth);
+                    // Bounds Check
+                    if (
+                        star.x < -100 ||
+                        star.x > width + 100 ||
+                        star.y < -100 ||
+                        star.y > height + 100
+                    ) {
+                        activeStars.splice(i, 1);
+                        continue;
+                    }
 
-                    // Rotation requires specific center
+                    // Render to Canvas
+                    ctx.save();
+                    
                     const cx = star.x + (currentWidth / 2);
                     const cy = star.y + (starHeight / 2);
-                    rect.setAttribute("transform", `rotate(${star.angle}, ${cx}, ${cy})`);
-
-                    requestAnimationFrame(move);
+                    
+                    ctx.translate(cx, cy);
+                    ctx.rotate((star.angle * Math.PI) / 180);
+                    ctx.translate(-cx, -cy);
+                    
+                    // Golden exact gradient match (#FFD700)
+                    const gradient = ctx.createLinearGradient(star.x, star.y, star.x + currentWidth, star.y);
+                    gradient.addColorStop(0, "rgba(255, 215, 0, 1)");
+                    gradient.addColorStop(1, "rgba(255, 215, 0, 0)");
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(star.x, star.y, currentWidth, starHeight);
+                    
+                    ctx.restore();
                 }
 
-                requestAnimationFrame(move);
+                requestAnimationFrame(renderLoop);
+            }
+            // Central rendering heartbeat
+            requestAnimationFrame(renderLoop);
 
-                // Schedule next star
+            function createStar() {
+                const { x, y, angle } = getRandomStartPoint();
+                
+                // Track properties natively rather than writing attributes to SVG DOM Elements
+                activeStars.push({
+                    x, y, angle, scale: 1, 
+                    speed: Math.random() * (maxSpeed - minSpeed) + minSpeed, 
+                    distance: 0
+                });
+
+                // Tab timeout idling inherently guarantees 0 visual differences since these bursts will naturally enqueue identically
                 setTimeout(createStar, Math.random() * (maxDelay - minDelay) + minDelay);
             }
 
-            // Start the loop
+            // Prime the sequence
             createStar();
         })();
 
