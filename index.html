@@ -296,23 +296,17 @@
                     if (topicName.toUpperCase() === 'BUSINESS') {
                         activateWorld('world-business');
                     } else if (topicName.toUpperCase() === 'AI') {
+                        if (typeof initAIWorld === 'function') initAIWorld();
                         activateWorld('world-ai');
-                        if (typeof initAIWorld === 'function') {
-                            setTimeout(initAIWorld, 500); // Lazy init 0.5s after landing
-                        }
                     } else if (topicName.toUpperCase() === 'STEEL CINEMA') {
+                        if (typeof initSteelCinemaWorld === 'function') initSteelCinemaWorld();
                         activateWorld('world-steel-cinema');
-                        if (typeof initSteelCinemaWorld === 'function') {
-                            setTimeout(initSteelCinemaWorld, 500); // Lazy init 0.5s after landing
-                        }
                     } else if (topicName.toUpperCase() === 'CULTURE') {
                         activateWorld('world-culture');
                     } else {
                         // Placeholder Galaxy World Theme for all unassigned topics
+                        if (typeof initGalaxyWorld === 'function') initGalaxyWorld();
                         activateWorld('world-galaxy');
-                        if (typeof initGalaxyWorld === 'function') {
-                            setTimeout(initGalaxyWorld, 500); // Lazy init 0.5s after landing
-                        }
                     }
 
                 }, 2000); // Match transition duration (2.0s delay + 0.5s fade in CSS)
@@ -338,19 +332,21 @@
                 layer.classList.remove('active');
             });
 
-            // Reactivate base frozen Nexus
-            const nexus = document.getElementById('world-nexus');
-            if (nexus) nexus.classList.add('active');
-
-            if (typeof disposeAIWorld === 'function') {
-                disposeAIWorld();
-            }
-            if (typeof disposeSteelCinemaWorld === 'function') {
-                disposeSteelCinemaWorld();
-            }
-            if (typeof disposeGalaxyWorld === 'function') {
-                disposeGalaxyWorld();
-            }
+            // Delayed disposal so canvases can fade out smoothly via CSS alongside everything else
+            setTimeout(() => {
+                const ai = document.getElementById('world-ai');
+                if (ai && !ai.classList.contains('active') && typeof disposeAIWorld === 'function') {
+                    disposeAIWorld();
+                }
+                const sc = document.getElementById('world-steel-cinema');
+                if (sc && !sc.classList.contains('active') && typeof disposeSteelCinemaWorld === 'function') {
+                    disposeSteelCinemaWorld();
+                }
+                const gx = document.getElementById('world-galaxy');
+                if (gx && !gx.classList.contains('active') && typeof disposeGalaxyWorld === 'function') {
+                    disposeGalaxyWorld();
+                }
+            }, 2000); // match fade transition
         }
 
         // Reset view helper
@@ -369,6 +365,10 @@
 
             // Clear World Backgrounds
             clearWorlds();
+
+            // Reactivate base frozen Nexus
+            const nexus = document.getElementById('world-nexus');
+            if (nexus) nexus.classList.add('active');
         }
 
         // Reset view when clicking Main Title (Home)
