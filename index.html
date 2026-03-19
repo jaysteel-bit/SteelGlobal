@@ -192,6 +192,8 @@
         let macroRotY = 0;
         let currentMouseRotX = 0;
         let currentMouseRotY = 0;
+        let targetMouseRotX = 0;
+        let targetMouseRotY = 0;
         
         const universeMicro = document.getElementById('universe-micro');
 
@@ -211,6 +213,18 @@
                 `;
             }
         }
+
+        // rAF loop for buttery smooth micro-movements (eliminates ghosting/duplication on gyro and smooths desktop mouse)
+        function updateMicroMovements() {
+            // Deskto/Gyro LERP (Linear Interpolate) current rotation towards target
+            // We use a gentle LERP factor (0.05) to bring back the "smooth subtle pan" feel
+            currentMouseRotX += (targetMouseRotX - currentMouseRotX) * 0.05;
+            currentMouseRotY += (targetMouseRotY - currentMouseRotY) * 0.05;
+
+            updateUniverseTransform();
+            requestAnimationFrame(updateMicroMovements);
+        }
+        requestAnimationFrame(updateMicroMovements);
 
         // 1. Initial Setup: Position everything visually
         items.forEach(item => {
@@ -259,11 +273,10 @@
 
             // Rotate the entire universe slightly based on mouse
             // We use rotateY and rotateX for that "looking around" feel
-            currentMouseRotX = -yPct * 5; // deg
-            currentMouseRotY = xPct * 5; // deg
+            targetMouseRotX = -yPct * 5; // deg
+            targetMouseRotY = xPct * 5; // deg
 
-            // Note: We combine this with the current translation
-            updateUniverseTransform();
+            // The loop handles updating currentMouseRotX/Y smoothly
         });
 
         // 3. The Warp Drive (Navigation)
@@ -1673,26 +1686,6 @@
 
             let baselineBeta = null;
             let baselineGamma = null;
-            
-            // Smoothing variables
-            let targetMouseRotX = 0;
-            let targetMouseRotY = 0;
-            let isGyroActive = false;
-
-            // rAF loop for buttery smooth micro-movements (eliminates ghosting/duplication)
-            function updateMicroMovements() {
-                if (isGyroActive) {
-                    // LERP (Linear Interpolate) current rotation towards target
-                    currentMouseRotX += (targetMouseRotX - currentMouseRotX) * 0.1;
-                    currentMouseRotY += (targetMouseRotY - currentMouseRotY) * 0.1;
-
-                    if (typeof updateUniverseTransform === 'function') {
-                        updateUniverseTransform();
-                    }
-                }
-                requestAnimationFrame(updateMicroMovements);
-            }
-            requestAnimationFrame(updateMicroMovements);
 
             btnUnlock.addEventListener('click', async () => {
                 try {
@@ -1700,12 +1693,10 @@
                     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                         const permissionState = await DeviceOrientationEvent.requestPermission();
                         if (permissionState === 'granted') {
-                            isGyroActive = true;
                             window.addEventListener('deviceorientation', handleOrientation);
                         }
                     } else {
                         // Non iOS 13+ devices
-                        isGyroActive = true;
                         window.addEventListener('deviceorientation', handleOrientation);
                     }
                 } catch (error) {
