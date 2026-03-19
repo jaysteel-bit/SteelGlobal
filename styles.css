@@ -220,18 +220,7 @@ body {
     transform: scale(1.1);
 }
 
-/* Stars / Dust */
-.star {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 4px;
-    height: 4px;
-    background: white;
-    border-radius: 50%;
-    opacity: 0.6;
-    transform: translate3d(var(--x), var(--y), var(--z));
-}
+
 
 /* --- Asset Protection --- */
 .img-protected {
@@ -306,6 +295,26 @@ body {
 
 .world-layer.active {
     opacity: 1;
+}
+
+/* --- Culture World (Soft Organic Radial Glow) --- */
+#world-culture {
+    background: radial-gradient(circle at 50% 50%, rgba(20, 80, 50, 0.5) 0%, rgba(212, 175, 55, 0.2) 40%, rgba(14, 14, 14, 0) 70%);
+}
+
+#world-culture.active {
+    animation: culture-pulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes culture-pulse {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
 }
 
 /* --- Business World (Animated Gradient) --- */

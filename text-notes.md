@@ -18,7 +18,7 @@ This is the **subtly shift** idea (The 'Worlds') we had before.
 * [2] **Culture:** [A soft, warm organic glow or a slight radial gradient. (emerald green and gold accents)]
 * [3] **AI:** [A subtle 'Light Pillar' example.]
 * [4] **Steel Cinema:** ['Plasma' example.]
-* [5] **Other Topics (Until Later Updated/Changed):** [Galaxy Example]
+* [5] **Other Topics/Worlds (Until Later Updated/Changed):** [Galaxy Example] - akin to place holders for now.
 
 2. **The 'Landing' Delay:** Wait for the warp animation to almost finish (e.g., a 0.5s delay) before fading in these background shifts so the arrival feels intentional.
 3. **Returning to Nexus:** We need a way to go back to the start. If the user clicks the pinned **Steel Global** logo in the top left, or clicks the 'empty void' of the background, warp the universe back to the original starting position (the Nexus).

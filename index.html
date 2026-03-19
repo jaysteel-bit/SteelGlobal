@@ -13,6 +13,12 @@
     <!-- Three.js for 3D backgrounds (AI World) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
+    <!-- OGL Library (for Steel Cinema & Galaxy Worlds) -->
+    <script type="module">
+        import * as oglModule from 'https://unpkg.com/ogl@1.0.11/src/index.js';
+        window.ogl = oglModule;
+    </script>
+
     <!-- Fonts: Outfit for a modern, clean, tech/industrial feel -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,6 +37,10 @@
     <div id="viewport">
         <!-- Background Layer (Destination State) -->
         <div id="background-layer">
+            
+            <!-- Default Nexus Background: Frozen Low-Density Galaxy -->
+            <div id="world-nexus" class="world-layer active"></div>
+
             <!-- Business World: Animated Gradient -->
             <div id="world-business" class="world-layer">
                 <div class="blob blob-1"></div>
@@ -43,6 +53,15 @@
             
             <!-- AI World: Light Pillars -->
             <div id="world-ai" class="world-layer" style="mix-blend-mode: luminosity;"></div>
+            
+            <!-- Steel Cinema World: Plasma -->
+            <div id="world-steel-cinema" class="world-layer"></div>
+
+            <!-- Culture World: Organic Glow -->
+            <div id="world-culture" class="world-layer"></div>
+
+            <!-- Galaxy Placeholder World -->
+            <div id="world-galaxy" class="world-layer"></div>
         </div>
 
         <!-- The Universe: The container that moves around the camera -->
@@ -146,14 +165,6 @@
             <div class="explore-item topic" data-x="400" data-y="-50" data-z="-2000">
                 <span class="topic-label">Ventures</span>
             </div>
-
-            <!-- Extra "Stars" for depth context -->
-            <div class="star" style="--x: 800px; --y: -500px; --z: -2000px;"></div>
-            <div class="star" style="--x: -600px; --y: 600px; --z: -1000px;"></div>
-            <div class="star" style="--x: 200px; --y: 300px; --z: -3000px;"></div>
-            <div class="star" style="--x: -900px; --y: -400px; --z: -1500px;"></div>
-            <div class="star" style="--x: 500px; --y: 700px; --z: -2500px;"></div>
-            <div class="star" style="--x: 0px; --y: -800px; --z: -3500px;"></div>
 
         </div>
     </div>
@@ -289,9 +300,19 @@
                         if (typeof initAIWorld === 'function') {
                             setTimeout(initAIWorld, 500); // Lazy init 0.5s after landing
                         }
+                    } else if (topicName.toUpperCase() === 'STEEL CINEMA') {
+                        activateWorld('world-steel-cinema');
+                        if (typeof initSteelCinemaWorld === 'function') {
+                            setTimeout(initSteelCinemaWorld, 500); // Lazy init 0.5s after landing
+                        }
+                    } else if (topicName.toUpperCase() === 'CULTURE') {
+                        activateWorld('world-culture');
                     } else {
-                        // Default galaxy or clear? For now clear.
-                        clearWorlds();
+                        // Placeholder Galaxy World Theme for all unassigned topics
+                        activateWorld('world-galaxy');
+                        if (typeof initGalaxyWorld === 'function') {
+                            setTimeout(initGalaxyWorld, 500); // Lazy init 0.5s after landing
+                        }
                     }
 
                 }, 2000); // Match transition duration (2.0s delay + 0.5s fade in CSS)
@@ -316,9 +337,19 @@
             document.querySelectorAll('.world-layer').forEach(layer => {
                 layer.classList.remove('active');
             });
-            activeWorld = null;
+
+            // Reactivate base frozen Nexus
+            const nexus = document.getElementById('world-nexus');
+            if (nexus) nexus.classList.add('active');
+
             if (typeof disposeAIWorld === 'function') {
                 disposeAIWorld();
+            }
+            if (typeof disposeSteelCinemaWorld === 'function') {
+                disposeSteelCinemaWorld();
+            }
+            if (typeof disposeGalaxyWorld === 'function') {
+                disposeGalaxyWorld();
             }
         }
 
@@ -604,6 +635,754 @@
             aiScene = null;
             aiCamera = null;
         }
+
+        // --- Steel Cinema World (Plasma) Engine ---
+        let scRenderer = null;
+        let scGl = null;
+        let scGeometry = null;
+        let scProgram = null;
+        let scMesh = null;
+        let scRafId = null;
+        let scMousePos = { x: 0, y: 0 };
+        const scCustomColorHex = '#ff6b35';
+
+        function hexToRgb(hex) {
+          const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+          if (!result) return [1, 0.5, 0.2];
+          return [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255];
+        }
+
+        function initSteelCinemaWorld() {
+            const container = document.getElementById('world-steel-cinema');
+            if (!container) return;
+            if (scRenderer) return; // Prevent duplicate instantiation
+
+            scRenderer = new ogl.Renderer({
+                webgl: 2,
+                alpha: true,
+                antialias: false,
+                dpr: Math.min(window.devicePixelRatio || 1, 2)
+            });
+            scGl = scRenderer.gl;
+            const canvas = scGl.canvas;
+            canvas.style.display = 'block';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            container.appendChild(canvas);
+
+            scGeometry = new ogl.Triangle(scGl);
+
+            const vertex = `#version 300 es
+            precision highp float;
+            in vec2 position;
+            in vec2 uv;
+            out vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = vec4(position, 0.0, 1.0);
+            }`;
+
+            const fragment = `#version 300 es
+            precision highp float;
+            uniform vec2 iResolution;
+            uniform float iTime;
+            uniform vec3 uCustomColor;
+            uniform float uUseCustomColor;
+            uniform float uSpeed;
+            uniform float uDirection;
+            uniform float uScale;
+            uniform float uOpacity;
+            uniform vec2 uMouse;
+            uniform float uMouseInteractive;
+            out vec4 fragColor;
+
+            void mainImage(out vec4 o, vec2 C) {
+              vec2 center = iResolution.xy * 0.5;
+              C = (C - center) / uScale + center;
+              
+              vec2 mouseOffset = (uMouse - center) * 0.0002;
+              C += mouseOffset * length(C - center) * step(0.5, uMouseInteractive);
+              
+              float i, d, z, T = iTime * uSpeed * uDirection;
+              vec3 O, p, S;
+
+              for (vec2 r = iResolution.xy, Q; ++i < 60.; O += o.w/d*o.xyz) {
+                p = z*normalize(vec3(C-.5*r,r.y)); 
+                p.z -= 4.; 
+                S = p;
+                d = p.y-T;
+                
+                p.x += .4*(1.+p.y)*sin(d + p.x*0.1)*cos(.34*d + p.x*0.05); 
+                Q = p.xz *= mat2(cos(p.y+vec4(0,11,33,0)-T)); 
+                z+= d = abs(sqrt(length(Q*Q)) - .25*(5.+S.y))/3.+8e-4; 
+                o = 1.+sin(S.y+p.z*.5+S.z-length(S-p)+vec4(2,1,0,8));
+              }
+              
+              o.xyz = tanh(O/1e4);
+            }
+
+            bool finite1(float x){ return !(isnan(x) || isinf(x)); }
+            vec3 sanitize(vec3 c){
+              return vec3(
+                finite1(c.r) ? c.r : 0.0,
+                finite1(c.g) ? c.g : 0.0,
+                finite1(c.b) ? c.b : 0.0
+              );
+            }
+
+            void main() {
+              vec4 o = vec4(0.0);
+              mainImage(o, gl_FragCoord.xy);
+              vec3 rgb = sanitize(o.rgb);
+              
+              float intensity = (rgb.r + rgb.g + rgb.b) / 3.0;
+              vec3 customColor = intensity * uCustomColor;
+              vec3 finalColor = mix(rgb, customColor, step(0.5, uUseCustomColor));
+              
+              float alpha = length(rgb) * uOpacity;
+              fragColor = vec4(finalColor, alpha);
+            }`;
+
+            const customColorRgb = hexToRgb(scCustomColorHex);
+
+            scProgram = new ogl.Program(scGl, {
+                vertex: vertex,
+                fragment: fragment,
+                uniforms: {
+                    iTime: { value: 0 },
+                    iResolution: { value: new Float32Array([1, 1]) },
+                    uCustomColor: { value: new Float32Array(customColorRgb) },
+                    uUseCustomColor: { value: 1.0 },
+                    uSpeed: { value: 0.6 * 0.4 },
+                    uDirection: { value: 1.0 },
+                    uScale: { value: 1.1 },
+                    uOpacity: { value: 0.8 },
+                    uMouse: { value: new Float32Array([0, 0]) },
+                    uMouseInteractive: { value: 1.0 }
+                }
+            });
+
+            scMesh = new ogl.Mesh(scGl, { geometry: scGeometry, program: scProgram });
+
+            container.addEventListener('mousemove', onSCMouseMove);
+            window.addEventListener('resize', onSCResize, false);
+            onSCResize();
+
+            const t0 = performance.now();
+            const loop = t => {
+                let timeValue = (t - t0) * 0.001;
+                if (scProgram) {
+                    scProgram.uniforms.iTime.value = timeValue;
+                    scRenderer.render({ scene: scMesh });
+                }
+                scRafId = requestAnimationFrame(loop);
+            };
+            scRafId = requestAnimationFrame(loop);
+        }
+
+        function onSCMouseMove(e) {
+            const container = document.getElementById('world-steel-cinema');
+            if (!container || !scProgram) return;
+            const rect = container.getBoundingClientRect();
+            scMousePos.x = e.clientX - rect.left;
+            scMousePos.y = e.clientY - rect.top;
+            const mouseUniform = scProgram.uniforms.uMouse.value;
+            mouseUniform[0] = scMousePos.x;
+            mouseUniform[1] = scMousePos.y;
+        }
+
+        function onSCResize() {
+            const container = document.getElementById('world-steel-cinema');
+            if (!container || !scRenderer || !scProgram) return;
+            const rect = container.getBoundingClientRect();
+            const width = Math.max(1, Math.floor(rect.width));
+            const height = Math.max(1, Math.floor(rect.height));
+            scRenderer.setSize(width, height);
+            const res = scProgram.uniforms.iResolution.value;
+            res[0] = scGl.drawingBufferWidth;
+            res[1] = scGl.drawingBufferHeight;
+        }
+
+        function disposeSteelCinemaWorld() {
+            if (scRafId) {
+                cancelAnimationFrame(scRafId);
+                scRafId = null;
+            }
+            window.removeEventListener('resize', onSCResize);
+            const container = document.getElementById('world-steel-cinema');
+            if (container) {
+                container.removeEventListener('mousemove', onSCMouseMove);
+                if (scGl && scGl.canvas && container.contains(scGl.canvas)) {
+                    container.removeChild(scGl.canvas);
+                }
+            }
+            if (scGl) {
+                scGl.getExtension('WEBGL_lose_context')?.loseContext();
+            }
+            scRenderer = null;
+            scGl = null;
+            scGeometry = null;
+            scProgram = null;
+            scMesh = null;
+        }
+
+        // --- Galaxy Placeholder World Theme Engine ---
+        let gxRenderer = null;
+        let gxGl = null;
+        let gxGeometry = null;
+        let gxProgram = null;
+        let gxMesh = null;
+        let gxRafId = null;
+        
+        // Smooth local variables for mouse interaction
+        let gxSmoothMousePos = { x: 0.5, y: 0.5 };
+        let gxTargetMousePos = { x: 0.5, y: 0.5 };
+        let gxSmoothMouseActive = 0.0;
+        let gxTargetMouseActive = 0.0;
+
+        function initGalaxyWorld() {
+            const container = document.getElementById('world-galaxy');
+            if (!container) return;
+            if (gxRenderer) return;
+
+            gxRenderer = new ogl.Renderer({
+                alpha: true,
+                premultipliedAlpha: false
+            });
+            gxGl = gxRenderer.gl;
+            const canvas = gxGl.canvas;
+            
+            gxGl.enable(gxGl.BLEND);
+            gxGl.blendFunc(gxGl.SRC_ALPHA, gxGl.ONE_MINUS_SRC_ALPHA);
+            gxGl.clearColor(0, 0, 0, 0);
+
+            canvas.style.display = 'block';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            container.appendChild(canvas);
+
+            gxGeometry = new ogl.Triangle(gxGl);
+
+            const vertexShader = `
+            attribute vec2 uv;
+            attribute vec2 position;
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = vec4(position, 0, 1);
+            }`;
+
+            const fragmentShader = `
+            precision highp float;
+            uniform float uTime;
+            uniform vec3 uResolution;
+            uniform vec2 uFocal;
+            uniform vec2 uRotation;
+            uniform float uStarSpeed;
+            uniform float uDensity;
+            uniform float uHueShift;
+            uniform float uSpeed;
+            uniform vec2 uMouse;
+            uniform float uGlowIntensity;
+            uniform float uSaturation;
+            uniform bool uMouseRepulsion;
+            uniform float uTwinkleIntensity;
+            uniform float uRotationSpeed;
+            uniform float uRepulsionStrength;
+            uniform float uMouseActiveFactor;
+            uniform float uAutoCenterRepulsion;
+            uniform bool uTransparent;
+
+            varying vec2 vUv;
+
+            #define NUM_LAYER 4.0
+            #define STAR_COLOR_CUTOFF 0.2
+            #define MAT45 mat2(0.7071, -0.7071, 0.7071, 0.7071)
+            #define PERIOD 3.0
+
+            float Hash21(vec2 p) {
+              p = fract(p * vec2(123.34, 456.21));
+              p += dot(p, p + 45.32);
+              return fract(p.x * p.y);
+            }
+            float tri(float x) { return abs(fract(x) * 2.0 - 1.0); }
+            float tris(float x) {
+              float t = fract(x);
+              return 1.0 - smoothstep(0.0, 1.0, abs(2.0 * t - 1.0));
+            }
+            float trisn(float x) {
+              float t = fract(x);
+              return 2.0 * (1.0 - smoothstep(0.0, 1.0, abs(2.0 * t - 1.0))) - 1.0;
+            }
+            vec3 hsv2rgb(vec3 c) {
+              vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+              vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+              return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+            }
+
+            float Star(vec2 uv, float flare) {
+              float d = length(uv);
+              float m = (0.05 * uGlowIntensity) / d;
+              float rays = smoothstep(0.0, 1.0, 1.0 - abs(uv.x * uv.y * 1000.0));
+              m += rays * flare * uGlowIntensity;
+              uv *= MAT45;
+              rays = smoothstep(0.0, 1.0, 1.0 - abs(uv.x * uv.y * 1000.0));
+              m += rays * 0.3 * flare * uGlowIntensity;
+              m *= smoothstep(1.0, 0.2, d);
+              return m;
+            }
+
+            vec3 StarLayer(vec2 uv) {
+              vec3 col = vec3(0.0);
+              vec2 gv = fract(uv) - 0.5; 
+              vec2 id = floor(uv);
+              for (int y = -1; y <= 1; y++) {
+                for (int x = -1; x <= 1; x++) {
+                  vec2 offset = vec2(float(x), float(y));
+                  vec2 si = id + vec2(float(x), float(y));
+                  float seed = Hash21(si);
+                  float size = fract(seed * 345.32);
+                  float glossLocal = tri(uStarSpeed / (PERIOD * seed + 1.0));
+                  float flareSize = smoothstep(0.9, 1.0, size) * glossLocal;
+
+                  float red = smoothstep(STAR_COLOR_CUTOFF, 1.0, Hash21(si + 1.0)) + STAR_COLOR_CUTOFF;
+                  float blu = smoothstep(STAR_COLOR_CUTOFF, 1.0, Hash21(si + 3.0)) + STAR_COLOR_CUTOFF;
+                  float grn = min(red, blu) * seed;
+                  vec3 base = vec3(red, grn, blu);
+                  
+                  float hue = atan(base.g - base.r, base.b - base.r) / (2.0 * 3.14159) + 0.5;
+                  hue = fract(hue + uHueShift / 360.0);
+                  float sat = length(base - vec3(dot(base, vec3(0.299, 0.587, 0.114)))) * uSaturation;
+                  float val = max(max(base.r, base.g), base.b);
+                  base = hsv2rgb(vec3(hue, sat, val));
+
+                  vec2 pad = vec2(tris(seed * 34.0 + uTime * uSpeed / 10.0), tris(seed * 38.0 + uTime * uSpeed / 30.0)) - 0.5;
+                  float star = Star(gv - offset - pad, flareSize);
+                  vec3 color = base;
+                  float twinkle = trisn(uTime * uSpeed + seed * 6.2831) * 0.5 + 1.0;
+                  twinkle = mix(1.0, twinkle, uTwinkleIntensity);
+                  star *= twinkle;
+                  col += star * size * color;
+                }
+              }
+              return col;
+            }
+
+            void main() {
+              vec2 focalPx = uFocal * uResolution.xy;
+              vec2 uv = (vUv * uResolution.xy - focalPx) / uResolution.y;
+              vec2 mouseNorm = uMouse - vec2(0.5);
+              
+              if (uAutoCenterRepulsion > 0.0) {
+                vec2 centerUV = vec2(0.0, 0.0);
+                float centerDist = length(uv - centerUV);
+                vec2 repulsion = normalize(uv - centerUV) * (uAutoCenterRepulsion / (centerDist + 0.1));
+                uv += repulsion * 0.05;
+              } else if (uMouseRepulsion) {
+                vec2 mousePosUV = (uMouse * uResolution.xy - focalPx) / uResolution.y;
+                float mouseDist = length(uv - mousePosUV);
+                vec2 repulsion = normalize(uv - mousePosUV) * (uRepulsionStrength / (mouseDist + 0.1));
+                uv += repulsion * 0.05 * uMouseActiveFactor;
+              } else {
+                vec2 mouseOffset = mouseNorm * 0.1 * uMouseActiveFactor;
+                uv += mouseOffset;
+              }
+
+              float autoRotAngle = uTime * uRotationSpeed;
+              mat2 autoRot = mat2(cos(autoRotAngle), -sin(autoRotAngle), sin(autoRotAngle), cos(autoRotAngle));
+              uv = autoRot * uv;
+              uv = mat2(uRotation.x, -uRotation.y, uRotation.y, uRotation.x) * uv;
+
+              vec3 col = vec3(0.0);
+              for (float i = 0.0; i < 1.0; i += 1.0 / NUM_LAYER) {
+                float depth = fract(i + uStarSpeed * uSpeed);
+                float scale = mix(20.0 * uDensity, 0.5 * uDensity, depth);
+                float fade = depth * smoothstep(1.0, 0.9, depth);
+                col += StarLayer(uv * scale + i * 453.32) * fade;
+              }
+
+              if (uTransparent) {
+                float alpha = length(col);
+                alpha = smoothstep(0.0, 0.3, alpha);
+                alpha = min(alpha, 1.0);
+                gl_FragColor = vec4(col, alpha);
+              } else {
+                gl_FragColor = vec4(col, 1.0);
+              }
+            }`;
+
+            gxProgram = new ogl.Program(gxGl, {
+                vertex: vertexShader,
+                fragment: fragmentShader,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uResolution: { value: new Float32Array([1, 1, 1]) },
+                    uFocal: { value: new Float32Array([0.5, 0.5]) },
+                    uRotation: { value: new Float32Array([1.0, 0.0]) },
+                    uStarSpeed: { value: 0.5 },
+                    uDensity: { value: 1.0 },
+                    uHueShift: { value: 140.0 }, // Value from specifications
+                    uSpeed: { value: 1.0 },
+                    uMouse: { value: new Float32Array([0.5, 0.5]) },
+                    uGlowIntensity: { value: 0.3 },
+                    uSaturation: { value: 0.0 },
+                    uMouseRepulsion: { value: true },
+                    uTwinkleIntensity: { value: 0.3 }, // Value from specifications
+                    uRotationSpeed: { value: 0.05 },
+                    uRepulsionStrength: { value: 2.0 },
+                    uMouseActiveFactor: { value: 0.0 },
+                    uAutoCenterRepulsion: { value: 0.0 },
+                    uTransparent: { value: true }
+                }
+            });
+
+            gxMesh = new ogl.Mesh(gxGl, { geometry: gxGeometry, program: gxProgram });
+
+            container.addEventListener('mousemove', onGXMouseMove);
+            container.addEventListener('mouseleave', onGXMouseLeave);
+            window.addEventListener('resize', onGXResize, false);
+            onGXResize();
+
+            const t0 = performance.now();
+            const loop = t => {
+                let timeValue = (t - t0) * 0.001;
+                gxRafId = requestAnimationFrame(loop);
+                
+                if (gxProgram) {
+                    gxProgram.uniforms.uTime.value = timeValue;
+                    gxProgram.uniforms.uStarSpeed.value = (timeValue * 0.5) / 10.0;
+                    
+                    const lerpFactor = 0.05;
+                    gxSmoothMousePos.x += (gxTargetMousePos.x - gxSmoothMousePos.x) * lerpFactor;
+                    gxSmoothMousePos.y += (gxTargetMousePos.y - gxSmoothMousePos.y) * lerpFactor;
+                    gxSmoothMouseActive += (gxTargetMouseActive - gxSmoothMouseActive) * lerpFactor;
+
+                    gxProgram.uniforms.uMouse.value[0] = gxSmoothMousePos.x;
+                    gxProgram.uniforms.uMouse.value[1] = gxSmoothMousePos.y;
+                    gxProgram.uniforms.uMouseActiveFactor.value = gxSmoothMouseActive;
+
+                    gxRenderer.render({ scene: gxMesh });
+                }
+            };
+            gxRafId = requestAnimationFrame(loop);
+        }
+
+        function onGXMouseMove(e) {
+            const container = document.getElementById('world-galaxy');
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            gxTargetMousePos.x = (e.clientX - rect.left) / rect.width;
+            gxTargetMousePos.y = 1.0 - ((e.clientY - rect.top) / rect.height);
+            gxTargetMouseActive = 1.0;
+        }
+
+        function onGXMouseLeave() {
+            gxTargetMouseActive = 0.0;
+        }
+
+        function onGXResize() {
+            const container = document.getElementById('world-galaxy');
+            if (!container || !gxRenderer || !gxProgram) return;
+            const width = container.offsetWidth || 1;
+            const height = container.offsetHeight || 1;
+            gxRenderer.setSize(width, height);
+            gxProgram.uniforms.uResolution.value[0] = gxGl.canvas.width;
+            gxProgram.uniforms.uResolution.value[1] = gxGl.canvas.height;
+            gxProgram.uniforms.uResolution.value[2] = gxGl.canvas.width / gxGl.canvas.height;
+        }
+
+        function disposeGalaxyWorld() {
+            if (gxRafId) {
+                cancelAnimationFrame(gxRafId);
+                gxRafId = null;
+            }
+            window.removeEventListener('resize', onGXResize);
+            const container = document.getElementById('world-galaxy');
+            if (container) {
+                container.removeEventListener('mousemove', onGXMouseMove);
+                container.removeEventListener('mouseleave', onGXMouseLeave);
+                if (gxGl && gxGl.canvas && container.contains(gxGl.canvas)) {
+                    container.removeChild(gxGl.canvas);
+                }
+            }
+            if (gxGl) {
+                gxGl.getExtension('WEBGL_lose_context')?.loseContext();
+            }
+            gxRenderer = null;
+            gxGl = null;
+            gxRenderer = null;
+            gxGl = null;
+            gxGeometry = null;
+            gxProgram = null;
+            gxMesh = null;
+        }
+
+        // --- Frozen Nexus Galaxy Engine (Always underlying) ---
+        let nxRenderer = null;
+        let nxGl = null;
+        let nxGeometry = null;
+        let nxProgram = null;
+        let nxMesh = null;
+        let nxRafId = null;
+        
+        // Smooth local variables for mouse interaction
+        let nxSmoothMousePos = { x: 0.5, y: 0.5 };
+        let nxTargetMousePos = { x: 0.5, y: 0.5 };
+        let nxSmoothMouseActive = 0.0;
+        let nxTargetMouseActive = 0.0;
+
+        function initNexusGalaxy() {
+            const container = document.getElementById('world-nexus');
+            if (!container) return;
+            if (nxRenderer) return;
+
+            nxRenderer = new ogl.Renderer({
+                alpha: true,
+                premultipliedAlpha: false
+            });
+            nxGl = nxRenderer.gl;
+            const canvas = nxGl.canvas;
+            
+            nxGl.enable(nxGl.BLEND);
+            nxGl.blendFunc(nxGl.SRC_ALPHA, nxGl.ONE_MINUS_SRC_ALPHA);
+            nxGl.clearColor(0, 0, 0, 0);
+
+            canvas.style.display = 'block';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            container.appendChild(canvas);
+
+            nxGeometry = new ogl.Triangle(nxGl);
+
+            const vertexShader = `
+            attribute vec2 uv;
+            attribute vec2 position;
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = vec4(position, 0, 1);
+            }`;
+
+            const fragmentShader = `
+            precision highp float;
+            uniform float uTime;
+            uniform vec3 uResolution;
+            uniform vec2 uFocal;
+            uniform vec2 uRotation;
+            uniform float uStarSpeed;
+            uniform float uDensity;
+            uniform float uHueShift;
+            uniform float uSpeed;
+            uniform vec2 uMouse;
+            uniform float uGlowIntensity;
+            uniform float uSaturation;
+            uniform bool uMouseRepulsion;
+            uniform float uTwinkleIntensity;
+            uniform float uRotationSpeed;
+            uniform float uRepulsionStrength;
+            uniform float uMouseActiveFactor;
+            uniform float uAutoCenterRepulsion;
+            uniform bool uTransparent;
+
+            varying vec2 vUv;
+
+            #define NUM_LAYER 4.0
+            #define STAR_COLOR_CUTOFF 0.2
+            #define MAT45 mat2(0.7071, -0.7071, 0.7071, 0.7071)
+            #define PERIOD 3.0
+
+            float Hash21(vec2 p) {
+              p = fract(p * vec2(123.34, 456.21));
+              p += dot(p, p + 45.32);
+              return fract(p.x * p.y);
+            }
+            float tri(float x) { return abs(fract(x) * 2.0 - 1.0); }
+            float tris(float x) {
+              float t = fract(x);
+              return 1.0 - smoothstep(0.0, 1.0, abs(2.0 * t - 1.0));
+            }
+            float trisn(float x) {
+              float t = fract(x);
+              return 2.0 * (1.0 - smoothstep(0.0, 1.0, abs(2.0 * t - 1.0))) - 1.0;
+            }
+            vec3 hsv2rgb(vec3 c) {
+              vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+              vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+              return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+            }
+
+            float Star(vec2 uv, float flare) {
+              float d = length(uv);
+              float m = (0.05 * uGlowIntensity) / d;
+              m *= smoothstep(1.0, 0.2, d);
+              return m;
+            }
+
+            vec3 StarLayer(vec2 uv) {
+              vec3 col = vec3(0.0);
+              vec2 gv = fract(uv) - 0.5; 
+              vec2 id = floor(uv);
+              for (int y = -1; y <= 1; y++) {
+                for (int x = -1; x <= 1; x++) {
+                  vec2 offset = vec2(float(x), float(y));
+                  vec2 si = id + vec2(float(x), float(y));
+                  float seed = Hash21(si);
+                  float size = fract(seed * 345.32);
+                  float glossLocal = tri(uStarSpeed / (PERIOD * seed + 1.0));
+                  float flareSize = smoothstep(0.9, 1.0, size) * glossLocal;
+
+                  float red = smoothstep(STAR_COLOR_CUTOFF, 1.0, Hash21(si + 1.0)) + STAR_COLOR_CUTOFF;
+                  float blu = smoothstep(STAR_COLOR_CUTOFF, 1.0, Hash21(si + 3.0)) + STAR_COLOR_CUTOFF;
+                  float grn = min(red, blu) * seed;
+                  vec3 base = vec3(red, grn, blu);
+                  
+                  float hue = atan(base.g - base.r, base.b - base.r) / (2.0 * 3.14159) + 0.5;
+                  hue = fract(hue + uHueShift / 360.0);
+                  float sat = length(base - vec3(dot(base, vec3(0.299, 0.587, 0.114)))) * uSaturation;
+                  float val = max(max(base.r, base.g), base.b);
+                  base = hsv2rgb(vec3(hue, sat, val));
+
+                  vec2 pad = vec2(tris(seed * 34.0 + uTime * uSpeed / 10.0), tris(seed * 38.0 + uTime * uSpeed / 30.0)) - 0.5;
+                  float star = Star(gv - offset - pad, flareSize);
+                  vec3 color = base;
+                  float twinkle = trisn(uTime * uSpeed + seed * 6.2831) * 0.5 + 1.0;
+                  twinkle = mix(1.0, twinkle, uTwinkleIntensity);
+                  star *= twinkle;
+                  col += star * size * color;
+                }
+              }
+              return col;
+            }
+
+            void main() {
+              vec2 focalPx = uFocal * uResolution.xy;
+              vec2 uv = (vUv * uResolution.xy - focalPx) / uResolution.y;
+              vec2 mouseNorm = uMouse - vec2(0.5);
+              
+              if (uAutoCenterRepulsion > 0.0) {
+                vec2 centerUV = vec2(0.0, 0.0);
+                float centerDist = length(uv - centerUV);
+                vec2 repulsion = normalize(uv - centerUV) * (uAutoCenterRepulsion / (centerDist + 0.1));
+                uv += repulsion * 0.05;
+              } else if (uMouseRepulsion) {
+                vec2 mousePosUV = (uMouse * uResolution.xy - focalPx) / uResolution.y;
+                float mouseDist = length(uv - mousePosUV);
+                vec2 repulsion = normalize(uv - mousePosUV) * (uRepulsionStrength / (mouseDist + 0.1));
+                uv += repulsion * 0.05 * uMouseActiveFactor;
+              } else {
+                vec2 mouseOffset = mouseNorm * 0.1 * uMouseActiveFactor;
+                uv += mouseOffset;
+              }
+
+              // COMPLETELY FROZEN PARALLAX/STARS
+              float autoRotAngle = 0.0;
+              mat2 autoRot = mat2(cos(autoRotAngle), -sin(autoRotAngle), sin(autoRotAngle), cos(autoRotAngle));
+              uv = autoRot * uv;
+              uv = mat2(uRotation.x, -uRotation.y, uRotation.y, uRotation.x) * uv;
+
+              vec3 col = vec3(0.0);
+              for (float i = 0.0; i < 1.0; i += 1.0 / NUM_LAYER) {
+                // Remove uSpeed/uStarSpeed entirely from depth shift. Use constant star coordinates.
+                float depth = fract(i);
+                float scale = mix(20.0 * uDensity, 0.5 * uDensity, depth);
+                float fade = depth * smoothstep(1.0, 0.9, depth);
+                col += StarLayer(uv * scale + i * 453.32) * fade;
+              }
+
+              if (uTransparent) {
+                float alpha = length(col);
+                alpha = smoothstep(0.0, 0.3, alpha);
+                alpha = min(alpha, 1.0);
+                gl_FragColor = vec4(col, alpha);
+              } else {
+                gl_FragColor = vec4(col, 1.0);
+              }
+            }`;
+
+            nxProgram = new ogl.Program(nxGl, {
+                vertex: vertexShader,
+                fragment: fragmentShader,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uResolution: { value: new Float32Array([1, 1, 1]) },
+                    uFocal: { value: new Float32Array([0.5, 0.5]) },
+                    uRotation: { value: new Float32Array([1.0, 0.0]) },
+                    uStarSpeed: { value: 0.0 }, // FROZEN
+                    uDensity: { value: 0.1 }, // HIGHLY SPARSE
+                    uHueShift: { value: 140.0 },
+                    uSpeed: { value: 0.0 }, // FROZEN
+                    uMouse: { value: new Float32Array([0.5, 0.5]) },
+                    uGlowIntensity: { value: 0.3 },
+                    uSaturation: { value: 0.0 },
+                    uMouseRepulsion: { value: true },
+                    uTwinkleIntensity: { value: 0.0 }, // STATIC NO TWINKLE
+                    uRotationSpeed: { value: 0.0 },
+                    uRepulsionStrength: { value: 2.0 },
+                    uMouseActiveFactor: { value: 0.0 },
+                    uAutoCenterRepulsion: { value: 0.0 },
+                    uTransparent: { value: true }
+                }
+            });
+
+            nxMesh = new ogl.Mesh(nxGl, { geometry: nxGeometry, program: nxProgram });
+
+            container.addEventListener('mousemove', onNXMouseMove);
+            container.addEventListener('mouseleave', onNXMouseLeave);
+            window.addEventListener('resize', onNXResize, false);
+            onNXResize();
+
+            // Minimalist Render Loop just to process the mouse interactions seamlessly
+            const loop = () => {
+                nxRafId = requestAnimationFrame(loop);
+                
+                if (nxProgram) {
+                    const lerpFactor = 0.05;
+                    nxSmoothMousePos.x += (nxTargetMousePos.x - nxSmoothMousePos.x) * lerpFactor;
+                    nxSmoothMousePos.y += (nxTargetMousePos.y - nxSmoothMousePos.y) * lerpFactor;
+                    nxSmoothMouseActive += (nxTargetMouseActive - nxSmoothMouseActive) * lerpFactor;
+
+                    nxProgram.uniforms.uMouse.value[0] = nxSmoothMousePos.x;
+                    nxProgram.uniforms.uMouse.value[1] = nxSmoothMousePos.y;
+                    nxProgram.uniforms.uMouseActiveFactor.value = nxSmoothMouseActive;
+
+                    nxRenderer.render({ scene: nxMesh });
+                }
+            };
+            nxRafId = requestAnimationFrame(loop);
+        }
+
+        function onNXMouseMove(e) {
+            const container = document.getElementById('world-nexus');
+            if (!container) return;
+            const rect = container.getBoundingClientRect();
+            nxTargetMousePos.x = (e.clientX - rect.left) / rect.width;
+            nxTargetMousePos.y = 1.0 - ((e.clientY - rect.top) / rect.height);
+            nxTargetMouseActive = 1.0;
+        }
+
+        function onNXMouseLeave() {
+            nxTargetMouseActive = 0.0;
+        }
+
+        function onNXResize() {
+            const container = document.getElementById('world-nexus');
+            if (!container || !nxRenderer || !nxProgram) return;
+            const width = typeof container.offsetWidth==='number' ? container.offsetWidth : window.innerWidth;
+            const height = typeof container.offsetHeight==='number' ? container.offsetHeight : window.innerHeight;
+            nxRenderer.setSize(width, height);
+            nxProgram.uniforms.uResolution.value[0] = nxGl.canvas.width;
+            nxProgram.uniforms.uResolution.value[1] = nxGl.canvas.height;
+            nxProgram.uniforms.uResolution.value[2] = nxGl.canvas.width / nxGl.canvas.height;
+        }
+
+        // Continual explicit check to bootstrap via the dynamically imported ES module 
+        let nexusInitInterval = setInterval(() => {
+            if (window.ogl && window.ogl.Renderer) {
+                initNexusGalaxy();
+                clearInterval(nexusInitInterval);
+            }
+        }, 100);
+
     </script>
 
     <!-- Shooting Stars Engine -->
