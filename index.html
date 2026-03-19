@@ -185,6 +185,18 @@
         let currentY = 0;
         let currentZ = 0;
         let activeWorld = null; // Track current active world
+        let macroRotX = 0;
+        let macroRotY = 0;
+        let currentMouseRotX = 0;
+        let currentMouseRotY = 0;
+
+        function updateUniverseTransform() {
+            universe.style.transform = `
+                translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
+                rotateX(${macroRotX + currentMouseRotX}deg) 
+                rotateY(${macroRotY + currentMouseRotY}deg)
+            `;
+        }
 
         // 1. Initial Setup: Position everything visually
         items.forEach(item => {
@@ -233,15 +245,11 @@
 
             // Rotate the entire universe slightly based on mouse
             // We use rotateY and rotateX for that "looking around" feel
-            const rotX = -yPct * 5; // deg
-            const rotY = xPct * 5; // deg
+            currentMouseRotX = -yPct * 5; // deg
+            currentMouseRotY = xPct * 5; // deg
 
             // Note: We combine this with the current translation
-            universe.style.transform = `
-                translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
-                rotateX(${rotX}deg) 
-                rotateY(${rotY}deg)
-            `;
+            updateUniverseTransform();
         });
 
         // 3. The Warp Drive (Navigation)
@@ -266,13 +274,10 @@
                 // Add a small offset to Z so we don't clip INSIDE the text, maybe stop 50px in front
                 currentZ = targetZ + 100;
 
-                // Apply the Warp
-                // The CSS transition handles the animation timing (cubic-bezier)
-                universe.style.transform = `
-                    translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
-                    rotateX(0deg) 
-                    rotateY(0deg)
-                `;
+                // Reset any macro pan and apply Warp
+                macroRotX = 0;
+                macroRotY = 0;
+                updateUniverseTransform();
 
                 // --- Visual Hierarchy: Dim Others ---
                 items.forEach(el => {
@@ -360,7 +365,9 @@
             currentX = 0;
             currentY = 0;
             currentZ = 0;
-            universe.style.transform = `translate3d(0,0,0)`;
+            macroRotX = 0;
+            macroRotY = 0;
+            updateUniverseTransform();
             document.body.classList.remove('at-destination');
 
             // Restore Opacity
@@ -378,6 +385,52 @@
             resetToNexus();
         });
 
+        // --- Task 3: Macro-Pan Controller ---
+        const panAngles = [
+            { rx: 0, ry: 0 },   // Center
+            { rx: 10, ry: 35 }, // Up Right
+            { rx: -15, ry: -40 }, // Down Left
+            { rx: 5, ry: -35 },  // Up Left
+            { rx: -10, ry: 45 }  // Down Right
+        ];
+        let panIndex = 0;
+
+        function triggerMacroPan() {
+            panIndex = (panIndex + 1) % panAngles.length;
+            macroRotX = panAngles[panIndex].rx;
+            macroRotY = panAngles[panIndex].ry;
+            updateUniverseTransform();
+            console.log("Macro Pan triggered:", panIndex, macroRotX, macroRotY);
+        }
+
+        // Active Double-Tap for Background
+        let lastTapTime = 0;
+        backgroundLayer.addEventListener('touchend', (e) => {
+            if (document.body.classList.contains('warping')) return;
+
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTapTime;
+
+            if (tapLength < 400 && tapLength > 0) {
+                // Double tap detected
+                triggerMacroPan();
+                e.preventDefault();
+            } else if (activeWorld === null || activeWorld === 'world-nexus') {
+                // Single tap on empty space if at Nexus
+                // Delay slightly to confirm it's not a double tap
+                setTimeout(() => {
+                    const newTapLength = new Date().getTime() - lastTapTime;
+                    if (newTapLength >= 400 && activeWorld === null || activeWorld === 'world-nexus') {
+                        triggerMacroPan();
+                    }
+                }, 400);
+            } else {
+                // Return to nexus normally on click (handled by click event below, but for mobile touch:)
+                // Actually touchend might fire click as well. We'll rely on the existing click event to return to Nexus.
+            }
+            lastTapTime = currentTime;
+        });
+
         // Background Controller: Return to Nexus on Void Click
         backgroundLayer.addEventListener('click', (e) => {
             // Guard against "ghost clicks" on mobile that trigger immediately after tapping a topic
@@ -385,12 +438,14 @@
                 return;
             }
 
-            // Only trigger if clicking the background itself (or active world layer), not bubbleing up from something else?
-            // Since background is behind everything (-5), only clicks that MISS topics will hit it?
-            // Actually, topics are in universe (z=10). Universe has pointer-events: none.
-            // Items have pointer-events: auto.
-            // So if you click a topic, it hits topic. If you click empty space, it hits universe (through) -> viewport (through?) -> backgroundLayer.
-            // Ensure backgroundLayer has pointer-events: auto.
+            // Task 3 addition: If we are at the Nexus, single tap macro-pans (desktop click)
+            if (activeWorld === null || activeWorld === 'world-nexus') {
+                // The double tap logic handles mobile. For desktop click, just trigger it:
+                if (e.pointerType === "mouse") {
+                   triggerMacroPan();
+                }
+                return;
+            }
 
             console.log('Background clicked -> Returning to Nexus');
             resetToNexus();
@@ -1646,17 +1701,13 @@
 
                 // We use rotateY and rotateX for that "looking around" feel, similar to mouse.
                 // Multiplying by a small factor for *subtle* wobble
-                const rotX = -betaOffset * 0.15; // deg
-                const rotY = gamma * 0.15; // deg
+                currentMouseRotX = -betaOffset * 0.15; // deg
+                currentMouseRotY = gamma * 0.15; // deg
 
                 // The variables 'universe', 'currentX', 'currentY', 'currentZ' are globally 
                 // accessible from the first script tag.
-                if (typeof universe !== 'undefined') {
-                    universe.style.transform = `
-                        translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
-                        rotateX(${rotX}deg) 
-                        rotateY(${rotY}deg)
-                    `;
+                if (typeof updateUniverseTransform === 'function') {
+                    updateUniverseTransform();
                 }
             }
         });
