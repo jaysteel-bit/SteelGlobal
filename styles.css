@@ -226,6 +226,9 @@ body {
     text-transform: uppercase;
     font-weight: 300;
     border-bottom: 1px solid transparent;
+    /* Expand touch area for mobile so it's easy to tap even when wobbling */
+    padding: 20px 30px;
+    margin: -20px -30px; 
 }
 
 .topic-label:hover {
