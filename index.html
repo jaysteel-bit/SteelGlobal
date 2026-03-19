@@ -1624,10 +1624,40 @@
                 setTimeout(() => gateway.classList.add('hidden'), 500); // Wait for transition
             });
 
-            // Placeholder for Task 2 passive gyroscope handling
+            // Task 2: Passive gyroscope handling for micro-movements
             function handleOrientation(event) {
-                // To be implemented in Task 2
-                // e.g. updating a global variable or directly applying subtle wobble to `#universe`
+                // Do not apply drift if currently warping to a destination
+                if (document.body.classList.contains('warping')) return;
+
+                let gamma = event.gamma; // Left-to-right tilt in degrees [-90, 90]
+                let beta = event.beta;   // Front-to-back tilt in degrees [-180, 180]
+
+                if (gamma === null || beta === null) return;
+
+                // Device orientation can vary based on standard holding positions. 
+                // We'll constrain it to a sensible arc to avoid flipping the universe.
+                gamma = Math.max(-45, Math.min(45, gamma));
+                
+                // Assuming normal viewing angle is phone tilted somewhat up
+                beta = Math.max(0, Math.min(90, beta));
+                
+                // Center beta around 45 degrees for a neutral starting position
+                let betaOffset = beta - 45; 
+
+                // We use rotateY and rotateX for that "looking around" feel, similar to mouse.
+                // Multiplying by a small factor for *subtle* wobble
+                const rotX = -betaOffset * 0.15; // deg
+                const rotY = gamma * 0.15; // deg
+
+                // The variables 'universe', 'currentX', 'currentY', 'currentZ' are globally 
+                // accessible from the first script tag.
+                if (typeof universe !== 'undefined') {
+                    universe.style.transform = `
+                        translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
+                        rotateX(${rotX}deg) 
+                        rotateY(${rotY}deg)
+                    `;
+                }
             }
         });
     </script>
