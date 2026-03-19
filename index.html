@@ -1673,6 +1673,26 @@
 
             let baselineBeta = null;
             let baselineGamma = null;
+            
+            // Smoothing variables
+            let targetMouseRotX = 0;
+            let targetMouseRotY = 0;
+            let isGyroActive = false;
+
+            // rAF loop for buttery smooth micro-movements (eliminates ghosting/duplication)
+            function updateMicroMovements() {
+                if (isGyroActive) {
+                    // LERP (Linear Interpolate) current rotation towards target
+                    currentMouseRotX += (targetMouseRotX - currentMouseRotX) * 0.1;
+                    currentMouseRotY += (targetMouseRotY - currentMouseRotY) * 0.1;
+
+                    if (typeof updateUniverseTransform === 'function') {
+                        updateUniverseTransform();
+                    }
+                }
+                requestAnimationFrame(updateMicroMovements);
+            }
+            requestAnimationFrame(updateMicroMovements);
 
             btnUnlock.addEventListener('click', async () => {
                 try {
@@ -1680,10 +1700,12 @@
                     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                         const permissionState = await DeviceOrientationEvent.requestPermission();
                         if (permissionState === 'granted') {
+                            isGyroActive = true;
                             window.addEventListener('deviceorientation', handleOrientation);
                         }
                     } else {
                         // Non iOS 13+ devices
+                        isGyroActive = true;
                         window.addEventListener('deviceorientation', handleOrientation);
                     }
                 } catch (error) {
@@ -1697,6 +1719,9 @@
             });
 
             // Task 2: Passive gyroscope handling for micro-movements (Optimized)
+            let lastGamma = null;
+            let lastBeta = null;
+
             function handleOrientation(event) {
                 // Do not apply drift if currently warping to a destination
                 if (document.body.classList.contains('warping')) return;
@@ -1705,6 +1730,18 @@
                 let beta = event.beta;   // Front-to-back tilt in degrees [-180, 180]
 
                 if (gamma === null || beta === null) return;
+                
+                // Jump protection: if device crosses Euler boundaries (+90 to -90, or +180 to -180), or glitches
+                if (lastGamma !== null && lastBeta !== null) {
+                    if (Math.abs(gamma - lastGamma) > 40 || Math.abs(beta - lastBeta) > 40) {
+                        // Massive jump detected! Re-baseline smoothly to ignore the wrap-around 
+                        baselineBeta = beta;
+                        baselineGamma = gamma;
+                        // Avoid snapping the target, just let LERP float back
+                    }
+                }
+                lastGamma = gamma;
+                lastBeta = beta;
 
                 // Calibrate the "center" immediately after permission is granted
                 if (baselineBeta === null) {
@@ -1717,18 +1754,12 @@
                 let deltaGamma = gamma - baselineGamma;
 
                 // Constrain the delta slightly to avoid extreme screen flips
-                deltaBeta = Math.max(-30, Math.min(30, deltaBeta));
-                deltaGamma = Math.max(-30, Math.min(30, deltaGamma));
+                deltaBeta = Math.max(-25, Math.min(25, deltaBeta));
+                deltaGamma = Math.max(-25, Math.min(25, deltaGamma));
 
-                // We use rotateY and rotateX for that "looking around" feel, similar to mouse.
-                // Multiplying by a small factor for *subtle* wobble
-                currentMouseRotX = -deltaBeta * 0.15; // deg
-                currentMouseRotY = deltaGamma * 0.15; // deg
-
-                // Trigger update
-                if (typeof updateUniverseTransform === 'function') {
-                    updateUniverseTransform();
-                }
+                // Set targets for LERP (We use rotateY and rotateX for that "looking around" feel)
+                targetMouseRotX = -deltaBeta * 0.15; // deg
+                targetMouseRotY = deltaGamma * 0.15; // deg
             }
         });
     </script>
