@@ -407,16 +407,16 @@
             aiRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             container.appendChild(aiRenderer.domElement);
 
-            const vertexShader = \`
+            const vertexShader = `
               varying vec2 vUv;
               void main() {
                 vUv = uv;
                 gl_Position = vec4(position, 1.0);
               }
-            \`;
+            `;
 
             // Define custom tanh replacement for compatibility with standard GLSL ES 1.0
-            const fragmentShader = \`
+            const fragmentShader = `
               precision highp float;
 
               uniform float uTime;
@@ -502,12 +502,12 @@
                 
                 gl_FragColor = vec4(col * uIntensity, 1.0);
               }
-            \`;
+            `;
 
             // Settings from prompt
             const topColor = new THREE.Vector3(1, 1, 1); // #ffffff
             const bottomColor = new THREE.Vector3(0, 0, 0); // #000000
-            const pillarRotation = 116;
+            const pillarRotation = 64;
             const pillarRotRad = (pillarRotation * Math.PI) / 180;
             const waveSin = Math.sin(0.4);
             const waveCos = Math.cos(0.4);
