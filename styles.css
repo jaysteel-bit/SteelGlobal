@@ -529,6 +529,12 @@ body {
     display: none;
 }
 
+@media (min-width: 769px) {
+    #permission-gateway {
+        display: none !important;
+    }
+}
+
 #permission-gateway.slide-up {
     transform: translateY(0);
 }
