@@ -66,11 +66,13 @@
             <div id="world-galaxy" class="world-layer"></div>
         </div>
 
-        <!-- The Universe: The container that moves around the camera -->
+        <!-- The Universe: The outer container that manages Warp Translations & Macro-Pan -->
         <div id="universe">
+            <!-- The inner layer: Instantly manages Mouse & Gyro Micro-movements -->
+            <div id="universe-micro">
 
-            <!-- The Nebula / Fog Layer -->
-            <div id="nebula"></div>
+                <!-- The Nebula / Fog Layer -->
+                <div id="nebula"></div>
 
             <!-- Shooting Stars Layer (Background 2D) -->
             <!-- NEXUS COMPONENT: Permanent background feature -->
@@ -168,8 +170,8 @@
                 <span class="topic-label">Ventures</span>
             </div>
 
+            </div>
         </div>
-    </div>
 
     <!-- Ambient background element -->
     <div class="ambient-glow"></div>
@@ -189,13 +191,24 @@
         let macroRotY = 0;
         let currentMouseRotX = 0;
         let currentMouseRotY = 0;
+        
+        const universeMicro = document.getElementById('universe-micro');
 
         function updateUniverseTransform() {
+            // Smooth outer container for Destination Warps and Macro Pans
             universe.style.transform = `
                 translate3d(${currentX}px, ${currentY}px, ${currentZ}px) 
-                rotateX(${macroRotX + currentMouseRotX}deg) 
-                rotateY(${macroRotY + currentMouseRotY}deg)
+                rotateX(${macroRotX}deg) 
+                rotateY(${macroRotY}deg)
             `;
+            
+            // Instant inner container for responsive Mouse/Gyro Parallax
+            if (universeMicro) {
+                universeMicro.style.transform = `
+                    rotateX(${currentMouseRotX}deg) 
+                    rotateY(${currentMouseRotY}deg)
+                `;
+            }
         }
 
         // 1. Initial Setup: Position everything visually
@@ -1657,6 +1670,9 @@
                 }
             }
 
+            let baselineBeta = null;
+            let baselineGamma = null;
+
             btnUnlock.addEventListener('click', async () => {
                 try {
                     // Try to request explicit permission if available (iOS 13+)
@@ -1679,7 +1695,7 @@
                 setTimeout(() => gateway.classList.add('hidden'), 500); // Wait for transition
             });
 
-            // Task 2: Passive gyroscope handling for micro-movements
+            // Task 2: Passive gyroscope handling for micro-movements (Optimized)
             function handleOrientation(event) {
                 // Do not apply drift if currently warping to a destination
                 if (document.body.classList.contains('warping')) return;
@@ -1689,23 +1705,26 @@
 
                 if (gamma === null || beta === null) return;
 
-                // Device orientation can vary based on standard holding positions. 
-                // We'll constrain it to a sensible arc to avoid flipping the universe.
-                gamma = Math.max(-45, Math.min(45, gamma));
-                
-                // Assuming normal viewing angle is phone tilted somewhat up
-                beta = Math.max(0, Math.min(90, beta));
-                
-                // Center beta around 45 degrees for a neutral starting position
-                let betaOffset = beta - 45; 
+                // Calibrate the "center" immediately after permission is granted
+                if (baselineBeta === null) {
+                    baselineBeta = beta;
+                    baselineGamma = gamma;
+                }
+
+                // Calculate the delta (movement relative to starting position)
+                let deltaBeta = beta - baselineBeta;
+                let deltaGamma = gamma - baselineGamma;
+
+                // Constrain the delta slightly to avoid extreme screen flips
+                deltaBeta = Math.max(-30, Math.min(30, deltaBeta));
+                deltaGamma = Math.max(-30, Math.min(30, deltaGamma));
 
                 // We use rotateY and rotateX for that "looking around" feel, similar to mouse.
                 // Multiplying by a small factor for *subtle* wobble
-                currentMouseRotX = -betaOffset * 0.15; // deg
-                currentMouseRotY = gamma * 0.15; // deg
+                currentMouseRotX = -deltaBeta * 0.15; // deg
+                currentMouseRotY = deltaGamma * 0.15; // deg
 
-                // The variables 'universe', 'currentX', 'currentY', 'currentZ' are globally 
-                // accessible from the first script tag.
+                // Trigger update
                 if (typeof updateUniverseTransform === 'function') {
                     updateUniverseTransform();
                 }
