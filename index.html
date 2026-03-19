@@ -332,6 +332,10 @@
                 layer.classList.remove('active');
             });
 
+            // Reactivate base frozen Nexus so it sits permanently beneath all other worlds for depth
+            const nexus = document.getElementById('world-nexus');
+            if (nexus) nexus.classList.add('active');
+
             // Delayed disposal so canvases can fade out smoothly via CSS alongside everything else
             setTimeout(() => {
                 const ai = document.getElementById('world-ai');
@@ -365,10 +369,6 @@
 
             // Clear World Backgrounds
             clearWorlds();
-
-            // Reactivate base frozen Nexus
-            const nexus = document.getElementById('world-nexus');
-            if (nexus) nexus.classList.add('active');
         }
 
         // Reset view when clicking Main Title (Home)
