@@ -1725,10 +1725,13 @@
                 // Jump protection: if device crosses Euler boundaries (+90 to -90, or +180 to -180), or glitches
                 if (lastGamma !== null && lastBeta !== null) {
                     if (Math.abs(gamma - lastGamma) > 40 || Math.abs(beta - lastBeta) > 40) {
-                        // Massive jump detected! Re-baseline smoothly to ignore the wrap-around 
-                        baselineBeta = beta;
-                        baselineGamma = gamma;
-                        // Avoid snapping the target, just let LERP float back
+                        // Massive jump detected! Offset the baseline by the jump amount 
+                        // so the actual visual delta remains mathematically perfectly identical.
+                        // This prevents any visual "snap" or "recentering" glitch.
+                        if (baselineBeta !== null && baselineGamma !== null) {
+                            baselineBeta += (beta - lastBeta);
+                            baselineGamma += (gamma - lastGamma);
+                        }
                     }
                 }
                 lastGamma = gamma;
