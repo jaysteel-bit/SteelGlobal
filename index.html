@@ -378,6 +378,11 @@
 
         // Background Controller: Return to Nexus on Void Click
         backgroundLayer.addEventListener('click', (e) => {
+            // Guard against "ghost clicks" on mobile that trigger immediately after tapping a topic
+            if (document.body.classList.contains('warping')) {
+                return;
+            }
+
             // Only trigger if clicking the background itself (or active world layer), not bubbleing up from something else?
             // Since background is behind everything (-5), only clicks that MISS topics will hit it?
             // Actually, topics are in universe (z=10). Universe has pointer-events: none.
