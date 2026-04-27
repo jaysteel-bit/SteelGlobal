@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel Global — Foundry</title>
+    <link rel="icon" type="image/png" href="assets/logos/Steel Logo - Transparent.png">
+
+    <link rel="stylesheet" href="styles.css?v=9">
+
+    <!-- Three.js (matches index.html version exactly so the persistent canvas wiring stays compatible) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Fonts: Outfit for body / Urbanist for the Compass concierge surface (mirror index.html) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;600&family=Urbanist:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body class="foundry-route">
+    <!-- Top Left Logo Container -->
+    <div class="logo-container" style="position: fixed; top: 30px; left: 30px; z-index: 1000;">
+        <img src="assets/logos/STEEL GLOBAL - Transparent.png" alt="Steel Global" class="brand-logo img-protected"
+            draggable="false" onclick="toggleCompass()" style="width: 140px;">
+    </div>
+
+    <!-- Main 3D Viewport -->
+    <div id="viewport">
+        <!-- Voice of Steel (Concierge Layer) -->
+        <div id="voice-of-steel" style="position: absolute; bottom: 12%; width: 100%; text-align: center; color: rgba(255, 255, 255, 0.8); font-family: var(--font-main); font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 300; opacity: 0; transition: opacity 1.5s ease-in-out; pointer-events: none; z-index: 100;"></div>
+
+        <!-- Shooting Stars Layer (Background 2D, behind Gargantua) -->
+        <canvas id="shooting-stars" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -20;"></canvas>
+
+        <!-- Gargantua Base Canvas (Persistent). Sizing/positioning lives in
+             styles.css under the "Gargantua Singularity (Phase 1.3)" block. -->
+        <div id="gargantua-canvas-container"></div>
+
+        <!-- Faint orbit ring placeholder for the planetary disc (Phase 2 fills with planets) -->
+        <div class="foundry-orbit-placeholder" aria-hidden="true"></div>
+    </div>
+
+    <!-- Ambient background element -->
+    <div class="ambient-glow"></div>
+
+    <!-- Gargantua Singularity Engine -->
+    <script type="module">
+        import { initGargantua } from './gargantua.js?v=9';
+        window.addEventListener('DOMContentLoaded', () => {
+            initGargantua();
+        });
+    </script>
+
+    <!-- Steel Global Compass -->
+    <script src="compass.js" defer></script>
+
+    <!-- Back/forward routing: returning to / reloads the home shell -->
+    <script>
+        window.addEventListener('popstate', () => {
+            // If the URL went back to root, load the home shell.
+            if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+
+</html>

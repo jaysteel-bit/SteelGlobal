@@ -8,7 +8,7 @@
     <!-- Favicon brand - Steel -->
     <link rel="icon" type="image/png" href="assets/logos/Steel Logo - Transparent.png">
 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=9">
 
     <!-- Three.js for 3D backgrounds (AI World) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -27,17 +27,30 @@
 
 <body>
     <!-- Top Left Logo Container -->
-    <div class="logo-container">
-        <!-- Logo requested: Steel Global Logo. -->
+    <div class="logo-container" style="position: fixed; top: 30px; left: 30px; z-index: 1000;">
+        <!-- Logo: Steel Global Logo. -->
         <img src="assets/logos/STEEL GLOBAL - Transparent.png" alt="Steel Global" class="brand-logo img-protected"
-            draggable="false">
+            draggable="false" onclick="toggleCompass()" style="width: 140px;">
     </div>
 
     <!-- Main 3D Viewport -->
     <div id="viewport">
+        <!-- Voice of Steel (Concierge Layer) -->
+        <div id="voice-of-steel"
+            style="position: absolute; bottom: 12%; width: 100%; text-align: center; color: rgba(255, 255, 255, 0.8); font-family: var(--font-main); font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 300; opacity: 0; transition: opacity 1.5s ease-in-out; pointer-events: none; z-index: 100;">
+        </div>
+
+        <!-- Shooting Stars Layer (Background 2D, moved behind Gargantua) -->
+        <canvas id="shooting-stars"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -20;"></canvas>
+
+        <!-- Gargantua Base Canvas (Persistent) -->
+        <div id="gargantua-canvas-container"></div>
+        <div id="warp-flash"></div>
+
         <!-- Background Layer (Destination State) -->
         <div id="background-layer">
-            
+
             <!-- Default Nexus Background: Frozen Low-Density Galaxy -->
             <div id="world-nexus" class="world-layer active"></div>
 
@@ -50,10 +63,10 @@
                 <!-- Animated Grid Overlay -->
                 <div id="business-grid"></div>
             </div>
-            
+
             <!-- AI World: Light Pillars -->
             <div id="world-ai" class="world-layer" style="mix-blend-mode: luminosity;"></div>
-            
+
             <!-- Steel Cinema World: Plasma -->
             <div id="world-steel-cinema" class="world-layer"></div>
 
@@ -74,94 +87,90 @@
                 <!-- The Nebula / Fog Layer -->
                 <div id="nebula"></div>
 
-            <!-- Shooting Stars Layer (Background 2D, ported to Canvas for extreme performance) -->
-            <!-- NEXUS COMPONENT: Permanent background feature -->
-            <canvas id="shooting-stars" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+                <!-- Center / Title -->
+                <div class="explore-item" data-x="0" data-y="0" data-z="0">
+                    <h1 class="main-title">STEEL<br>GLOBAL</h1>
+                    <p class="tagline">Curating the Unimagined</p>
+                </div>
 
-            <!-- Center / Title -->
-            <div class="explore-item" data-x="0" data-y="0" data-z="0">
-                <h1 class="main-title">STEEL<br>GLOBAL</h1>
-                <p class="tagline">Curating the Unimagined</p>
-            </div>
+                <!-- 'The Infinite Sky' Topics scattered in 3D space -->
 
-            <!-- 'The Infinite Sky' Topics scattered in 3D space -->
+                <!-- Business: Mid Right, somewhat far (-500) -->
+                <div class="explore-item topic" data-x="400" data-y="-100" data-z="-500">
+                    <span class="topic-label">Business</span>
+                </div>
 
-            <!-- Business: Mid Right, somewhat far (-500) -->
-            <div class="explore-item topic" data-x="400" data-y="-100" data-z="-500">
-                <span class="topic-label">Business</span>
-            </div>
+                <!-- Design: Close, Bottom Left (-200) -->
+                <div class="explore-item topic" data-x="-300" data-y="200" data-z="-200">
+                    <span class="topic-label">Design</span>
+                </div>
 
-            <!-- Design: Close, Bottom Left (-200) -->
-            <div class="explore-item topic" data-x="-300" data-y="200" data-z="-200">
-                <span class="topic-label">Design</span>
-            </div>
+                <!-- Culture: Far Back Left (-1500) -->
+                <div class="explore-item topic" data-x="-500" data-y="-300" data-z="-1500">
+                    <span class="topic-label">Culture</span>
+                </div>
 
-            <!-- Culture: Far Back Left (-1500) -->
-            <div class="explore-item topic" data-x="-500" data-y="-300" data-z="-1500">
-                <span class="topic-label">Culture</span>
-            </div>
+                <!-- Populating More -->
 
-            <!-- Populating More -->
+                <!-- Photography: Top Right, Deep (-1800) -->
+                <div class="explore-item topic" data-x="600" data-y="-400" data-z="-1800">
+                    <span class="topic-label">Photography</span>
+                </div>
 
-            <!-- Photography: Top Right, Deep (-1800) -->
-            <div class="explore-item topic" data-x="600" data-y="-400" data-z="-1800">
-                <span class="topic-label">Photography</span>
-            </div>
+                <!-- Philosophy: Bottom Right, Very Close (-100) - almost in face -->
+                <div class="explore-item topic" data-x="350" data-y="300" data-z="-100">
+                    <span class="topic-label">Philosophy</span>
+                </div>
 
-            <!-- Philosophy: Bottom Right, Very Close (-100) - almost in face -->
-            <div class="explore-item topic" data-x="350" data-y="300" data-z="-100">
-                <span class="topic-label">Philosophy</span>
-            </div>
+                <!-- Videography: Mid Left, Medium (-800) -->
+                <div class="explore-item topic" data-x="-600" data-y="0" data-z="-800">
+                    <span class="topic-label">Videography</span>
+                </div>
 
-            <!-- Videography: Mid Left, Medium (-800) -->
-            <div class="explore-item topic" data-x="-600" data-y="0" data-z="-800">
-                <span class="topic-label">Videography</span>
-            </div>
+                <!-- AI: Top Left, Very Deep (-3000) -->
+                <div class="explore-item topic" data-x="-800" data-y="-600" data-z="-3000">
+                    <span class="topic-label">AI</span>
+                </div>
 
-            <!-- AI: Top Left, Very Deep (-3000) -->
-            <div class="explore-item topic" data-x="-800" data-y="-600" data-z="-3000">
-                <span class="topic-label">AI</span>
-            </div>
+                <!-- Futurism: Bottom Center, Deep (-2500) -->
+                <div class="explore-item topic" data-x="0" data-y="500" data-z="-2500">
+                    <span class="topic-label">Futurism</span>
+                </div>
 
-            <!-- Futurism: Bottom Center, Deep (-2500) -->
-            <div class="explore-item topic" data-x="0" data-y="500" data-z="-2500">
-                <span class="topic-label">Futurism</span>
-            </div>
+                <!-- Modernism: Top Center, Mid (-1200) -->
+                <div class="explore-item topic" data-x="0" data-y="-500" data-z="-1200">
+                    <span class="topic-label">Modernism</span>
+                </div>
 
-            <!-- Modernism: Top Center, Mid (-1200) -->
-            <div class="explore-item topic" data-x="0" data-y="-500" data-z="-1200">
-                <span class="topic-label">Modernism</span>
-            </div>
+                <!-- Charity: Far Right, Deep (-2200) -->
+                <div class="explore-item topic" data-x="900" data-y="100" data-z="-2200">
+                    <span class="topic-label">Charity</span>
+                </div>
 
-            <!-- Charity: Far Right, Deep (-2200) -->
-            <div class="explore-item topic" data-x="900" data-y="100" data-z="-2200">
-                <span class="topic-label">Charity</span>
-            </div>
+                <!-- Steel Cinema: Far Left, Deep (-1600) -->
+                <div class="explore-item topic" data-x="-700" data-y="200" data-z="-1600">
+                    <span class="topic-label">Steel Cinema</span>
+                </div>
 
-            <!-- Steel Cinema: Far Left, Deep (-1600) -->
-            <div class="explore-item topic" data-x="-700" data-y="200" data-z="-1600">
-                <span class="topic-label">Steel Cinema</span>
-            </div>
+                <!-- Sonic Arts: Bottom Left, Deep (-2800) -->
+                <div class="explore-item topic" data-x="-400" data-y="700" data-z="-2800">
+                    <span class="topic-label">Sonic Arts</span>
+                </div>
 
-            <!-- Sonic Arts: Bottom Left, Deep (-2800) -->
-            <div class="explore-item topic" data-x="-400" data-y="700" data-z="-2800">
-                <span class="topic-label">Sonic Arts</span>
-            </div>
+                <!-- Fashion: Top Right, Mid-Deep (-1400) -->
+                <div class="explore-item topic" data-x="500" data-y="-200" data-z="-1400">
+                    <span class="topic-label">Fashion</span>
+                </div>
 
-            <!-- Fashion: Top Right, Mid-Deep (-1400) -->
-            <div class="explore-item topic" data-x="500" data-y="-200" data-z="-1400">
-                <span class="topic-label">Fashion</span>
-            </div>
+                <!-- STEEL CARD: Center Left, Close-ish (-400) -->
+                <div class="explore-item topic" data-x="-400" data-y="-100" data-z="-400">
+                    <span class="topic-label">STEEL CARD</span>
+                </div>
 
-            <!-- STEEL CARD: Center Left, Close-ish (-400) -->
-            <div class="explore-item topic" data-x="-400" data-y="-100" data-z="-400">
-                <span class="topic-label">STEEL CARD</span>
-            </div>
-
-            <!-- Ventures: Center Right, Deep (-2000) -->
-            <div class="explore-item topic" data-x="400" data-y="-50" data-z="-2000">
-                <span class="topic-label">Ventures</span>
-            </div>
+                <!-- Ventures: Center Right, Deep (-2000) -->
+                <div class="explore-item topic" data-x="400" data-y="-50" data-z="-2000">
+                    <span class="topic-label">Ventures</span>
+                </div>
 
             </div>
         </div>
@@ -187,7 +196,7 @@
         let currentMouseRotY = 0;
         let targetMouseRotX = 0;
         let targetMouseRotY = 0;
-        
+
         const universeMicro = document.getElementById('universe-micro');
 
         function updateUniverseTransform() {
@@ -197,13 +206,25 @@
                 rotateX(${macroRotX}deg) 
                 rotateY(${macroRotY}deg)
             `;
-            
+
             // Instant inner container for responsive Mouse/Gyro Parallax
             if (universeMicro) {
                 universeMicro.style.transform = `
                     rotateX(${currentMouseRotX}deg) 
                     rotateY(${currentMouseRotY}deg)
                 `;
+            }
+
+            // Apply the same subtle parallax to Gargantua so it feels physically anchored
+            const gargantuaContainer = document.getElementById('gargantua-canvas-container');
+            if (gargantuaContainer) {
+                if (document.body.classList.contains('foundry-route') || gargantuaContainer.classList.contains('warp-zoom')) {
+                    // Clear inline style so the CSS scale transform can run
+                    gargantuaContainer.style.transform = '';
+                } else {
+                    // Translate slightly based on the rotation degrees to match the parallax feel
+                    gargantuaContainer.style.transform = `translate3d(${currentMouseRotY * 1.5}px, ${-currentMouseRotX * 1.5}px, 0)`;
+                }
             }
         }
 
@@ -462,7 +483,7 @@
             if (activeWorld === null || activeWorld === 'world-nexus') {
                 // The double tap logic handles mobile. For desktop click, just trigger it:
                 if (e.pointerType === "mouse") {
-                   triggerMacroPan();
+                    triggerMacroPan();
                 }
                 return;
             }
@@ -480,6 +501,16 @@
 
     </script>
 
+    <!-- Gargantua Singularity Engine -->
+    <script type="module">
+        import { initGargantua } from './gargantua.js?v=9';
+
+        // Initialize Gargantua on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initGargantua();
+        });
+    </script>
+
     <!-- AI World (LightPillars) Engine -->
     <script>
         let aiRenderer = null;
@@ -492,7 +523,7 @@
         function initAIWorld() {
             const container = document.getElementById('world-ai');
             if (!container) return;
-            
+
             // If already initialized, do nothing
             if (aiRenderer) return;
 
@@ -626,30 +657,30 @@
             const waveCos = Math.cos(0.4);
 
             aiMaterial = new THREE.ShaderMaterial({
-              vertexShader,
-              fragmentShader,
-              uniforms: {
-                uTime: { value: 0 },
-                uResolution: { value: new THREE.Vector2(width, height) },
-                uMouse: { value: new THREE.Vector2(0,0) },
-                uTopColor: { value: topColor },
-                uBottomColor: { value: bottomColor },
-                uIntensity: { value: 1.0 },
-                uInteractive: { value: false },
-                uGlowAmount: { value: 0.002 },
-                uPillarWidth: { value: 3.0 },
-                uPillarHeight: { value: 0.4 },
-                uNoiseIntensity: { value: 0.6 },
-                uRotCos: { value: 1.0 },
-                uRotSin: { value: 0.0 },
-                uPillarRotCos: { value: Math.cos(pillarRotRad) },
-                uPillarRotSin: { value: Math.sin(pillarRotRad) },
-                uWaveSin: { value: waveSin },
-                uWaveCos: { value: waveCos }
-              },
-              transparent: true,
-              depthWrite: false,
-              depthTest: false
+                vertexShader,
+                fragmentShader,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uResolution: { value: new THREE.Vector2(width, height) },
+                    uMouse: { value: new THREE.Vector2(0, 0) },
+                    uTopColor: { value: topColor },
+                    uBottomColor: { value: bottomColor },
+                    uIntensity: { value: 1.0 },
+                    uInteractive: { value: false },
+                    uGlowAmount: { value: 0.002 },
+                    uPillarWidth: { value: 3.0 },
+                    uPillarHeight: { value: 0.4 },
+                    uNoiseIntensity: { value: 0.6 },
+                    uRotCos: { value: 1.0 },
+                    uRotSin: { value: 0.0 },
+                    uPillarRotCos: { value: Math.cos(pillarRotRad) },
+                    uPillarRotSin: { value: Math.sin(pillarRotRad) },
+                    uWaveSin: { value: waveSin },
+                    uWaveCos: { value: waveCos }
+                },
+                transparent: true,
+                depthWrite: false,
+                depthTest: false
             });
 
             aiGeometry = new THREE.PlaneGeometry(2, 2);
@@ -661,18 +692,18 @@
             const frameTime = 1000 / 60;
 
             const animate = currentTime => {
-              if (!aiMaterial || !aiRenderer) return;
+                if (!aiMaterial || !aiRenderer) return;
 
-              const deltaTime = currentTime - lastTime;
-              if (deltaTime >= frameTime) {
-                aiTime += 0.016 * 0.3; // rotationSpeed = 0.3
-                aiMaterial.uniforms.uTime.value = aiTime;
-                aiMaterial.uniforms.uRotCos.value = Math.cos(aiTime * 0.3);
-                aiMaterial.uniforms.uRotSin.value = Math.sin(aiTime * 0.3);
-                aiRenderer.render(aiScene, aiCamera);
-                lastTime = currentTime - (deltaTime % frameTime);
-              }
-              aiRafId = requestAnimationFrame(animate);
+                const deltaTime = currentTime - lastTime;
+                if (deltaTime >= frameTime) {
+                    aiTime += 0.016 * 0.3; // rotationSpeed = 0.3
+                    aiMaterial.uniforms.uTime.value = aiTime;
+                    aiMaterial.uniforms.uRotCos.value = Math.cos(aiTime * 0.3);
+                    aiMaterial.uniforms.uRotSin.value = Math.sin(aiTime * 0.3);
+                    aiRenderer.render(aiScene, aiCamera);
+                    lastTime = currentTime - (deltaTime % frameTime);
+                }
+                aiRafId = requestAnimationFrame(animate);
             };
             aiRafId = requestAnimationFrame(animate);
 
@@ -683,7 +714,7 @@
         function onAIResize() {
             if (!aiRenderer || !aiMaterial) return;
             const container = document.getElementById('world-ai');
-            if(!container) return;
+            if (!container) return;
             const newWidth = container.clientWidth;
             const newHeight = container.clientHeight;
             aiRenderer.setSize(newWidth, newHeight);
@@ -696,7 +727,7 @@
                 aiRafId = null;
             }
             window.removeEventListener('resize', onAIResize);
-            
+
             if (aiRenderer) {
                 aiRenderer.dispose();
                 aiRenderer.forceContextLoss();
@@ -729,9 +760,9 @@
         const scCustomColorHex = '#ff6b35';
 
         function hexToRgb(hex) {
-          const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-          if (!result) return [1, 0.5, 0.2];
-          return [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255];
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if (!result) return [1, 0.5, 0.2];
+            return [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255];
         }
 
         function initSteelCinemaWorld() {
@@ -915,7 +946,7 @@
         let gxProgram = null;
         let gxMesh = null;
         let gxRafId = null;
-        
+
         // Smooth local variables for mouse interaction
         let gxSmoothMousePos = { x: 0.5, y: 0.5 };
         let gxTargetMousePos = { x: 0.5, y: 0.5 };
@@ -933,7 +964,7 @@
             });
             gxGl = gxRenderer.gl;
             const canvas = gxGl.canvas;
-            
+
             gxGl.enable(gxGl.BLEND);
             gxGl.blendFunc(gxGl.SRC_ALPHA, gxGl.ONE_MINUS_SRC_ALPHA);
             gxGl.clearColor(0, 0, 0, 0);
@@ -1129,11 +1160,11 @@
             const loop = t => {
                 let timeValue = (t - t0) * 0.001;
                 gxRafId = requestAnimationFrame(loop);
-                
+
                 if (gxProgram) {
                     gxProgram.uniforms.uTime.value = timeValue;
                     gxProgram.uniforms.uStarSpeed.value = (timeValue * 0.5) / 10.0;
-                    
+
                     const lerpFactor = 0.05;
                     gxSmoothMousePos.x += (gxTargetMousePos.x - gxSmoothMousePos.x) * lerpFactor;
                     gxSmoothMousePos.y += (gxTargetMousePos.y - gxSmoothMousePos.y) * lerpFactor;
@@ -1206,7 +1237,7 @@
         let nxProgram = null;
         let nxMesh = null;
         let nxRafId = null;
-        
+
         // Smooth local variables for mouse interaction
         let nxSmoothMousePos = { x: 0.5, y: 0.5 };
         let nxTargetMousePos = { x: 0.5, y: 0.5 };
@@ -1224,7 +1255,7 @@
             });
             nxGl = nxRenderer.gl;
             const canvas = nxGl.canvas;
-            
+
             nxGl.enable(nxGl.BLEND);
             nxGl.blendFunc(nxGl.SRC_ALPHA, nxGl.ONE_MINUS_SRC_ALPHA);
             nxGl.clearColor(0, 0, 0, 0);
@@ -1416,7 +1447,7 @@
             // Minimalist Render Loop just to process the mouse interactions seamlessly
             const loop = () => {
                 nxRafId = requestAnimationFrame(loop);
-                
+
                 if (nxProgram) {
                     const lerpFactor = 0.05;
                     nxSmoothMousePos.x += (nxTargetMousePos.x - nxSmoothMousePos.x) * lerpFactor;
@@ -1449,8 +1480,8 @@
         function onNXResize() {
             const container = document.getElementById('world-nexus');
             if (!container || !nxRenderer || !nxProgram) return;
-            const width = typeof container.offsetWidth==='number' ? container.offsetWidth : window.innerWidth;
-            const height = typeof container.offsetHeight==='number' ? container.offsetHeight : window.innerHeight;
+            const width = typeof container.offsetWidth === 'number' ? container.offsetWidth : window.innerWidth;
+            const height = typeof container.offsetHeight === 'number' ? container.offsetHeight : window.innerHeight;
             nxRenderer.setSize(width, height);
             nxProgram.uniforms.uResolution.value[0] = nxGl.canvas.width;
             nxProgram.uniforms.uResolution.value[1] = nxGl.canvas.height;
@@ -1473,7 +1504,7 @@
             const canvas = document.getElementById('shooting-stars');
             if (!canvas) return;
             const ctx = canvas.getContext('2d', { alpha: true });
-            
+
             let width = window.innerWidth;
             let height = window.innerHeight;
 
@@ -1539,22 +1570,22 @@
 
                     // Render to Canvas
                     ctx.save();
-                    
+
                     const cx = star.x + (currentWidth / 2);
                     const cy = star.y + (starHeight / 2);
-                    
+
                     ctx.translate(cx, cy);
                     ctx.rotate((star.angle * Math.PI) / 180);
                     ctx.translate(-cx, -cy);
-                    
+
                     // Golden exact gradient match (#FFD700)
                     const gradient = ctx.createLinearGradient(star.x, star.y, star.x + currentWidth, star.y);
                     gradient.addColorStop(0, "rgba(255, 215, 0, 1)");
                     gradient.addColorStop(1, "rgba(255, 215, 0, 0)");
-                    
+
                     ctx.fillStyle = gradient;
                     ctx.fillRect(star.x, star.y, currentWidth, starHeight);
-                    
+
                     ctx.restore();
                 }
 
@@ -1565,11 +1596,11 @@
 
             function createStar() {
                 const { x, y, angle } = getRandomStartPoint();
-                
+
                 // Track properties natively rather than writing attributes to SVG DOM Elements
                 activeStars.push({
-                    x, y, angle, scale: 1, 
-                    speed: Math.random() * (maxSpeed - minSpeed) + minSpeed, 
+                    x, y, angle, scale: 1,
+                    speed: Math.random() * (maxSpeed - minSpeed) + minSpeed,
                     distance: 0
                 });
 
@@ -1671,7 +1702,7 @@
 
             // Only show on mobile devices (or we could detect if DeviceOrientation is available)
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
+
             // For now, always check if we need permission on iOS 13+
             if (isMobile) {
                 if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -1729,7 +1760,7 @@
                 let beta = event.beta;   // Front-to-back tilt in degrees [-180, 180]
 
                 if (gamma === null || beta === null) return;
-                
+
                 // Jump protection: if device crosses Euler boundaries (+90 to -90, or +180 to -180), or glitches
                 if (lastGamma !== null && lastBeta !== null) {
                     if (Math.abs(gamma - lastGamma) > 40 || Math.abs(beta - lastBeta) > 40) {
@@ -1765,6 +1796,9 @@
             }
         });
     </script>
+
+    <!-- Steel Global Compass -->
+    <script src="compass.js" defer></script>
 </body>
 
 </html>
